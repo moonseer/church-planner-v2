@@ -56,7 +56,7 @@ The pipeline is defined in the following GitHub Actions workflow files:
 
 The workflows use the following environment setup:
 
-- **Node.js**: Version 16
+- **Node.js**: Version 18
 - **MongoDB**: Version 4.4 (runs as a service container)
 - **Environment Variables**:
   - `MONGO_URI`: Connection string for MongoDB
