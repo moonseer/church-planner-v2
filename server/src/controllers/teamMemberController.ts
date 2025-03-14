@@ -6,7 +6,7 @@ import mongoose from 'mongoose';
 // @desc    Get all team members for a team
 // @route   GET /api/teams/:teamId/members
 // @access  Private
-export const getTeamMembers = async (req: Request, res: Response) => {
+export const getTeamMembers = async (req: Request, res: Response): Promise<void> => {
   try {
     const teamId = req.params.teamId;
     
@@ -14,18 +14,20 @@ export const getTeamMembers = async (req: Request, res: Response) => {
     const team = await Team.findById(teamId);
     
     if (!team) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Team not found'
       });
+      return;
     }
     
     // Check if team belongs to user's church
     if (team.church.toString() !== (req as any).user.church.toString()) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Not authorized to access this team'
       });
+      return;
     }
     
     const teamMembers = await TeamMember.find({ team: teamId })
@@ -47,35 +49,38 @@ export const getTeamMembers = async (req: Request, res: Response) => {
 // @desc    Get single team member
 // @route   GET /api/team-members/:id
 // @access  Private
-export const getTeamMember = async (req: Request, res: Response) => {
+export const getTeamMember = async (req: Request, res: Response): Promise<void> => {
   try {
     const teamMember = await TeamMember.findById(req.params.id)
       .populate('user', 'name email')
       .populate('team', 'name');
     
     if (!teamMember) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Team member not found'
       });
+      return;
     }
     
     // Verify team belongs to user's church
     const team = await Team.findById(teamMember.team);
     
     if (!team) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Team not found'
       });
+      return;
     }
     
     // Check if team belongs to user's church
     if (team.church.toString() !== (req as any).user.church.toString()) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Not authorized to access this team member'
       });
+      return;
     }
     
     res.status(200).json({
@@ -93,7 +98,7 @@ export const getTeamMember = async (req: Request, res: Response) => {
 // @desc    Add team member
 // @route   POST /api/teams/:teamId/members
 // @access  Private
-export const addTeamMember = async (req: Request, res: Response) => {
+export const addTeamMember = async (req: Request, res: Response): Promise<void> => {
   try {
     const teamId = req.params.teamId;
     
@@ -101,18 +106,20 @@ export const addTeamMember = async (req: Request, res: Response) => {
     const team = await Team.findById(teamId);
     
     if (!team) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Team not found'
       });
+      return;
     }
     
     // Check if team belongs to user's church
     if (team.church.toString() !== (req as any).user.church.toString()) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Not authorized to add members to this team'
       });
+      return;
     }
     
     // Set team ID in request body
@@ -125,10 +132,11 @@ export const addTeamMember = async (req: Request, res: Response) => {
     });
     
     if (existingMember) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'User is already a member of this team'
       });
+      return;
     }
     
     const teamMember = await TeamMember.create(req.body);
@@ -145,7 +153,7 @@ export const addTeamMember = async (req: Request, res: Response) => {
   } catch (error: any) {
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors).map((val: any) => val.message);
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: messages
       });
@@ -161,33 +169,36 @@ export const addTeamMember = async (req: Request, res: Response) => {
 // @desc    Update team member
 // @route   PUT /api/team-members/:id
 // @access  Private
-export const updateTeamMember = async (req: Request, res: Response) => {
+export const updateTeamMember = async (req: Request, res: Response): Promise<void> => {
   try {
     let teamMember = await TeamMember.findById(req.params.id);
     
     if (!teamMember) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Team member not found'
       });
+      return;
     }
     
     // Verify team belongs to user's church
     const team = await Team.findById(teamMember.team);
     
     if (!team) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Team not found'
       });
+      return;
     }
     
     // Check if team belongs to user's church
     if (team.church.toString() !== (req as any).user.church.toString()) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Not authorized to update this team member'
       });
+      return;
     }
     
     // Don't allow changing the team or user
@@ -208,7 +219,7 @@ export const updateTeamMember = async (req: Request, res: Response) => {
   } catch (error: any) {
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors).map((val: any) => val.message);
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: messages
       });
@@ -224,33 +235,36 @@ export const updateTeamMember = async (req: Request, res: Response) => {
 // @desc    Remove team member
 // @route   DELETE /api/team-members/:id
 // @access  Private
-export const removeTeamMember = async (req: Request, res: Response) => {
+export const removeTeamMember = async (req: Request, res: Response): Promise<void> => {
   try {
     const teamMember = await TeamMember.findById(req.params.id);
     
     if (!teamMember) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Team member not found'
       });
+      return;
     }
     
     // Verify team belongs to user's church
     const team = await Team.findById(teamMember.team);
     
     if (!team) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Team not found'
       });
+      return;
     }
     
     // Check if team belongs to user's church
     if (team.church.toString() !== (req as any).user.church.toString()) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Not authorized to remove this team member'
       });
+      return;
     }
     
     await teamMember.deleteOne();

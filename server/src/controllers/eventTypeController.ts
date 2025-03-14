@@ -5,7 +5,7 @@ import mongoose from 'mongoose';
 // @desc    Get all event types for a church
 // @route   GET /api/event-types
 // @access  Private
-export const getEventTypes = async (req: Request, res: Response) => {
+export const getEventTypes = async (req: Request, res: Response): Promise<void> => {
   try {
     // Get church ID from authenticated user
     const churchId = (req as any).user.church;
@@ -28,23 +28,25 @@ export const getEventTypes = async (req: Request, res: Response) => {
 // @desc    Get single event type
 // @route   GET /api/event-types/:id
 // @access  Private
-export const getEventType = async (req: Request, res: Response) => {
+export const getEventType = async (req: Request, res: Response): Promise<void> => {
   try {
     const eventType = await EventType.findById(req.params.id);
 
     if (!eventType) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Event type not found'
       });
+      return;
     }
 
     // Check if event type belongs to user's church
     if (eventType.church.toString() !== (req as any).user.church.toString()) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Not authorized to access this event type'
       });
+      return;
     }
 
     res.status(200).json({
@@ -62,13 +64,13 @@ export const getEventType = async (req: Request, res: Response) => {
 // @desc    Create new event type
 // @route   POST /api/event-types
 // @access  Private
-export const createEventType = async (req: Request, res: Response) => {
+export const createEventType = async (req: Request, res: Response): Promise<void> => {
   try {
     // Add church from authenticated user
     req.body.church = (req as any).user.church;
-
+    
     const eventType = await EventType.create(req.body);
-
+    
     res.status(201).json({
       success: true,
       data: eventType
@@ -76,10 +78,11 @@ export const createEventType = async (req: Request, res: Response) => {
   } catch (error: any) {
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors).map((val: any) => val.message);
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: messages
       });
+      return;
     } else {
       res.status(500).json({
         success: false,
@@ -92,30 +95,35 @@ export const createEventType = async (req: Request, res: Response) => {
 // @desc    Update event type
 // @route   PUT /api/event-types/:id
 // @access  Private
-export const updateEventType = async (req: Request, res: Response) => {
+export const updateEventType = async (req: Request, res: Response): Promise<void> => {
   try {
     let eventType = await EventType.findById(req.params.id);
-
+    
     if (!eventType) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Event type not found'
       });
+      return;
     }
-
+    
     // Check if event type belongs to user's church
     if (eventType.church.toString() !== (req as any).user.church.toString()) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Not authorized to update this event type'
       });
+      return;
     }
-
+    
+    // Don't allow changing the church
+    delete req.body.church;
+    
     eventType = await EventType.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true
     });
-
+    
     res.status(200).json({
       success: true,
       data: eventType
@@ -123,10 +131,11 @@ export const updateEventType = async (req: Request, res: Response) => {
   } catch (error: any) {
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors).map((val: any) => val.message);
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: messages
       });
+      return;
     } else {
       res.status(500).json({
         success: false,
@@ -139,27 +148,29 @@ export const updateEventType = async (req: Request, res: Response) => {
 // @desc    Delete event type
 // @route   DELETE /api/event-types/:id
 // @access  Private
-export const deleteEventType = async (req: Request, res: Response) => {
+export const deleteEventType = async (req: Request, res: Response): Promise<void> => {
   try {
     const eventType = await EventType.findById(req.params.id);
-
+    
     if (!eventType) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Event type not found'
       });
+      return;
     }
-
+    
     // Check if event type belongs to user's church
     if (eventType.church.toString() !== (req as any).user.church.toString()) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Not authorized to delete this event type'
       });
+      return;
     }
-
+    
     await eventType.deleteOne();
-
+    
     res.status(200).json({
       success: true,
       data: {}

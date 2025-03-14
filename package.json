@@ -10,7 +10,19 @@
     "install-all": "npm install && cd client && npm install && cd ../server && npm install",
     "build": "cd client && npm run build && cd ../server && npm run build",
     "start": "cd server && npm start",
-    "validate-setup": "node project_setup.js"
+    "validate-setup": "node project_setup.js",
+    "lint:all": "npm run lint:client && npm run lint:server",
+    "lint:client": "cd client && npm run lint",
+    "lint:server": "cd server && npm run lint",
+    "typecheck:all": "npm run typecheck:client && npm run typecheck:server",
+    "typecheck:client": "cd client && tsc --noEmit",
+    "typecheck:server": "cd server && tsc --noEmit",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md}\"",
+    "format:write": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
+    "quality": "npm run lint:all && npm run typecheck:all && npm run format:check",
+    "test:coverage:client": "cd client && npm run test:coverage",
+    "test:coverage:server": "cd server && npm run test:coverage",
+    "test:coverage": "npm run test:coverage:client && npm run test:coverage:server"
   },
   "keywords": [
     "church",
@@ -22,10 +34,22 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "@sentry/node": "^9.5.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
+    "@types/jest": "^29.5.14",
+    "@types/morgan": "^1.9.9",
+    "@types/winston": "^2.4.4",
+    "@vitest/coverage-c8": "^0.33.0",
+    "concurrently": "^8.2.2",
+    "jest": "^29.7.0",
+    "morgan": "^1.10.0",
+    "ts-jest": "^29.2.6",
+    "vitest": "^3.0.8",
+    "winston": "^3.17.0"
   },
   "dependencies": {
     "dotenv": "^16.4.7",
     "mongoose": "^8.12.1"
   }
-} 
+}

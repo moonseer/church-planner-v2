@@ -5,7 +5,7 @@ import mongoose from 'mongoose';
 // @desc    Get events for a church with date range filtering
 // @route   GET /api/events
 // @access  Private
-export const getEvents = async (req: Request, res: Response) => {
+export const getEvents = async (req: Request, res: Response): Promise<void> => {
   try {
     // Get church ID from authenticated user
     const churchId = (req as any).user.church;
@@ -43,25 +43,27 @@ export const getEvents = async (req: Request, res: Response) => {
 // @desc    Get single event
 // @route   GET /api/events/:id
 // @access  Private
-export const getEvent = async (req: Request, res: Response) => {
+export const getEvent = async (req: Request, res: Response): Promise<void> => {
   try {
     const event = await Event.findById(req.params.id)
       .populate('eventType', 'name color')
       .populate('createdBy', 'name');
     
     if (!event) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Event not found'
       });
+      return;
     }
     
     // Check if event belongs to user's church
     if (event.church.toString() !== (req as any).user.church.toString()) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Not authorized to access this event'
       });
+      return;
     }
     
     res.status(200).json({
@@ -79,129 +81,104 @@ export const getEvent = async (req: Request, res: Response) => {
 // @desc    Create new event
 // @route   POST /api/events
 // @access  Private
-export const createEvent = async (req: Request, res: Response) => {
+export const createEvent = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Add church and user from authenticated user
+    // Add church from authenticated user
     req.body.church = (req as any).user.church;
+    
+    // Add user ID as creator
     req.body.createdBy = (req as any).user.id;
     
-    // Validate dates
-    const startDate = new Date(req.body.start);
-    const endDate = new Date(req.body.end);
-    
-    if (endDate < startDate) {
-      return res.status(400).json({
-        success: false,
-        error: 'End date cannot be before start date'
-      });
-    }
-    
+    // Create event
     const event = await Event.create(req.body);
     
-    // Populate event type for the response
+    // Return populated event
     const populatedEvent = await Event.findById(event._id)
-      .populate('eventType', 'name color');
+      .populate('eventType', 'name color')
+      .populate('createdBy', 'name');
     
     res.status(201).json({
       success: true,
       data: populatedEvent
     });
   } catch (error: any) {
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map((val: any) => val.message);
-      return res.status(400).json({
-        success: false,
-        error: messages
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        error: error.message
-      });
-    }
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
   }
 };
 
 // @desc    Update event
 // @route   PUT /api/events/:id
 // @access  Private
-export const updateEvent = async (req: Request, res: Response) => {
+export const updateEvent = async (req: Request, res: Response): Promise<void> => {
   try {
     let event = await Event.findById(req.params.id);
     
     if (!event) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Event not found'
       });
+      return;
     }
     
     // Check if event belongs to user's church
     if (event.church.toString() !== (req as any).user.church.toString()) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Not authorized to update this event'
       });
+      return;
     }
     
-    // Validate dates if they are being updated
-    if (req.body.start && req.body.end) {
-      const startDate = new Date(req.body.start);
-      const endDate = new Date(req.body.end);
-      
-      if (endDate < startDate) {
-        return res.status(400).json({
-          success: false,
-          error: 'End date cannot be before start date'
-        });
-      }
-    }
+    // Don't allow changing the church or creator
+    delete req.body.church;
+    delete req.body.createdBy;
     
+    // Update event
     event = await Event.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true
-    }).populate('eventType', 'name color');
+    })
+      .populate('eventType', 'name color')
+      .populate('createdBy', 'name');
     
     res.status(200).json({
       success: true,
       data: event
     });
   } catch (error: any) {
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map((val: any) => val.message);
-      return res.status(400).json({
-        success: false,
-        error: messages
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        error: error.message
-      });
-    }
+    res.status(400).json({
+      success: false,
+      error: error.message
+    });
   }
 };
 
 // @desc    Delete event
 // @route   DELETE /api/events/:id
 // @access  Private
-export const deleteEvent = async (req: Request, res: Response) => {
+export const deleteEvent = async (req: Request, res: Response): Promise<void> => {
   try {
     const event = await Event.findById(req.params.id);
     
     if (!event) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Event not found'
       });
+      return;
     }
     
     // Check if event belongs to user's church
     if (event.church.toString() !== (req as any).user.church.toString()) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'Not authorized to delete this event'
       });
+      return;
     }
     
     await event.deleteOne();

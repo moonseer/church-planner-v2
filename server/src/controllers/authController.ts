@@ -6,17 +6,18 @@ import mongoose from 'mongoose';
 // @desc    Register user
 // @route   POST /api/auth/register
 // @access  Public
-export const register = async (req: Request, res: Response) => {
+export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, email, password, role, churchName, churchAddress, churchCity, churchState, churchZip } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'User already exists with that email',
       });
+      return;
     }
 
     // Create or find church
@@ -36,10 +37,11 @@ export const register = async (req: Request, res: Response) => {
         });
       }
     } else {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Church name is required',
       });
+      return;
     }
 
     // Create user
@@ -79,43 +81,47 @@ export const register = async (req: Request, res: Response) => {
 // @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public
-export const login = async (req: Request, res: Response) => {
+export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
 
     // Validate email & password
     if (!email || !password) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Please provide an email and password',
       });
+      return;
     }
 
     // Check for user
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         error: 'Invalid credentials',
       });
+      return;
     }
 
     // Check if password matches
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         error: 'Invalid credentials',
       });
+      return;
     }
 
     // Get church info
     const church = await Church.findById(user.church);
     if (!church) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Church not found',
       });
+      return;
     }
 
     // Generate JWT token
@@ -146,25 +152,27 @@ export const login = async (req: Request, res: Response) => {
 // @desc    Get current logged in user
 // @route   GET /api/auth/me
 // @access  Private
-export const getCurrentUser = async (req: Request, res: Response) => {
+export const getCurrentUser = async (req: Request, res: Response): Promise<void> => {
   try {
     // req.user is set by the auth middleware
     const user = await User.findById((req as any).user.id);
     
     if (!user) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'User not found',
       });
+      return;
     }
 
     // Get church info
     const church = await Church.findById(user.church);
     if (!church) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Church not found',
       });
+      return;
     }
 
     res.status(200).json({

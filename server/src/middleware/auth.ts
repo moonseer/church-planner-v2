@@ -19,7 +19,7 @@ declare global {
 }
 
 // Protect routes
-export const protect = async (req: Request, res: Response, next: NextFunction) => {
+export const protect = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   let token;
 
   // Check if token exists in Authorization header
@@ -34,10 +34,11 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
 
   // Make sure token exists
   if (!token) {
-    return res.status(401).json({
+    res.status(401).json({
       success: false,
       error: 'Not authorized to access this route',
     });
+    return;
   }
 
   try {
@@ -49,7 +50,7 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
 
     next();
   } catch (error) {
-    return res.status(401).json({
+    res.status(401).json({
       success: false,
       error: 'Not authorized to access this route',
     });
@@ -58,19 +59,21 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
 
 // Grant access to specific roles
 export const authorize = (...roles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         error: 'Not authorized to access this route',
       });
+      return;
     }
 
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: `User role ${req.user.role} is not authorized to access this route`,
       });
+      return;
     }
 
     next();

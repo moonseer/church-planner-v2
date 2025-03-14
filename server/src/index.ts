@@ -13,6 +13,11 @@ import teamRoutes from './routes/teamRoutes';
 import teamMemberRoutes from './routes/teamMemberRoutes';
 import serviceRoutes from './routes/serviceRoutes';
 
+// Import logging and error handling
+import morgan from 'morgan';
+import { logger, stream } from './utils/logger';
+import { errorHandler, setupUnhandledRejections } from './utils/errorHandler';
+
 // Load environment variables
 dotenv.config();
 
@@ -22,6 +27,9 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Setup request logging
+app.use(morgan('combined', { stream }));
 
 // Mount routes
 app.use('/api/churches', churchRoutes);
@@ -53,18 +61,26 @@ const connectDB = async () => {
   }
 };
 
-// Start server
-const PORT = process.env.PORT || 8080;
-const portNumber = parseInt(PORT.toString(), 10);
+// Setup global error handler (should be after all routes)
+app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  
-  // Connect to database
-  connectDB();
-  
-  // Setup Swagger docs
-  swaggerDocs(app, portNumber);
-});
+// Setup unhandled rejection handlers
+setupUnhandledRejections();
+
+// Only start the server if this file is run directly (not when imported for testing)
+if (process.env.NODE_ENV !== 'test' && require.main === module) {
+  const PORT = process.env.PORT || 8080;
+  const portNumber = parseInt(PORT.toString(), 10);
+
+  const server = app.listen(portNumber, () => {
+    logger.info(`Server running in ${process.env.NODE_ENV} mode on port ${portNumber}`);
+    
+    // Connect to database
+    connectDB();
+    
+    // Setup Swagger docs
+    swaggerDocs(app, portNumber);
+  });
+}
 
 export default app; 

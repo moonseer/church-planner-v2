@@ -4,7 +4,7 @@ import Church from '../models/Church';
 // @desc    Get all churches
 // @route   GET /api/churches
 // @access  Public
-export const getChurches = async (req: Request, res: Response) => {
+export const getChurches = async (req: Request, res: Response): Promise<void> => {
   try {
     const churches = await Church.find();
     res.status(200).json({
@@ -23,7 +23,7 @@ export const getChurches = async (req: Request, res: Response) => {
 // @desc    Create new church
 // @route   POST /api/churches
 // @access  Private (Admin only)
-export const createChurch = async (req: Request, res: Response) => {
+export const createChurch = async (req: Request, res: Response): Promise<void> => {
   try {
     const church = await Church.create(req.body);
     
@@ -42,15 +42,16 @@ export const createChurch = async (req: Request, res: Response) => {
 // @desc    Get single church
 // @route   GET /api/churches/:id
 // @access  Public
-export const getChurch = async (req: Request, res: Response) => {
+export const getChurch = async (req: Request, res: Response): Promise<void> => {
   try {
     const church = await Church.findById(req.params.id);
     
     if (!church) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Church not found',
       });
+      return;
     }
     
     res.status(200).json({
@@ -68,7 +69,7 @@ export const getChurch = async (req: Request, res: Response) => {
 // @desc    Update church
 // @route   PUT /api/churches/:id
 // @access  Private (Admin only)
-export const updateChurch = async (req: Request, res: Response) => {
+export const updateChurch = async (req: Request, res: Response): Promise<void> => {
   try {
     const church = await Church.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
@@ -76,10 +77,11 @@ export const updateChurch = async (req: Request, res: Response) => {
     });
     
     if (!church) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Church not found',
       });
+      return;
     }
     
     res.status(200).json({
@@ -97,15 +99,16 @@ export const updateChurch = async (req: Request, res: Response) => {
 // @desc    Delete church
 // @route   DELETE /api/churches/:id
 // @access  Private (Admin only)
-export const deleteChurch = async (req: Request, res: Response) => {
+export const deleteChurch = async (req: Request, res: Response): Promise<void> => {
   try {
     const church = await Church.findByIdAndDelete(req.params.id);
     
     if (!church) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'Church not found',
       });
+      return;
     }
     
     res.status(200).json({
