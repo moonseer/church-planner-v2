@@ -756,6 +756,7 @@ This document tracks the development progress of the Church Planner application.
 - [ ] Services functionality: Implemented database storage for services with proper API integration
 - [ ] Calendar display issue: Fixed calendar to properly show both morning and evening services
 - [x] CI/CD pipeline error: Fixed ESLint structuredClone error by updating Node.js version to 18 in GitHub Actions workflows
+- [x] GitHub Actions workflow error: Updated GitHub Actions to latest versions (v4) to fix compatibility issues
 
 ### TypeScript Issues Fixed
 - [ ] TypeScript compilation errors in `eventController.ts` regarding the `EventType` import and issues with `req.user` and `churchId` - Fixed by properly handling churchId and userId types, converting strings to ObjectId when needed
