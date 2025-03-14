@@ -1,0 +1,31 @@
+{
+  "name": "church-planner-v2",
+  "version": "1.0.0",
+  "description": "Church planning and management application",
+  "main": "index.js",
+  "scripts": {
+    "client": "cd client && npm run dev",
+    "server": "cd server && npm run dev",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "install-all": "npm install && cd client && npm install && cd ../server && npm install",
+    "build": "cd client && npm run build && cd ../server && npm run build",
+    "start": "cd server && npm start",
+    "validate-setup": "node project_setup.js"
+  },
+  "keywords": [
+    "church",
+    "planning",
+    "management",
+    "calendar",
+    "events"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "mongoose": "^8.12.1"
+  }
+} 
