@@ -108,19 +108,27 @@ This document tracks the development progress of the Church Planner application.
 - [x] Fix TypeScript linter errors in controller return types
 
 ### Testing Infrastructure
-- [ ] Set up Jest testing framework for the server
-- [ ] Create initial test files for authentication functionality
+- [x] Set up Jest testing framework for the server
+- [x] Create initial test files for authentication functionality
 - [ ] Set up Vitest testing framework for client components
-- [ ] Set up test configuration files (jest.config.js, vitest.config.ts)
-- [ ] Set up test setup files for both server and client
+- [x] Set up test configuration files (jest.config.js, vitest.config.ts)
+- [x] Set up test setup files for both server and client
 - [ ] Set up Playwright for end-to-end testing
 - [ ] Implement comprehensive test coverage for server components
   - [ ] Database connection tests
-  - [ ] Auth controller tests (login, registration, password reset)
-  - [ ] Middleware tests (auth middleware, error handling)
-  - [ ] Route tests (API endpoints)
-  - [ ] Model tests (validation, methods)
+  - [x] Auth controller tests (login, registration, password reset)
+  - [x] Middleware tests (auth middleware, error handling)
+  - [x] Route tests (API endpoints)
+  - [x] Model tests (validation, methods)
   - [ ] Complete coverage for all remaining server components
+    - [x] teamController.ts (100% coverage)
+    - [x] churchController.ts (100% coverage)
+    - [x] eventController.ts (100% coverage) 
+    - [x] User model tests (password hashing, JWT token generation)
+    - [x] errorHandler utility tests
+    - [ ] teamMemberController.ts (partial coverage)
+    - [ ] eventTypeController.ts (partial coverage)
+    - [ ] serviceController.ts (partial coverage)
 - [ ] Implement comprehensive test coverage for client components
   - [ ] Component rendering tests (ServiceCard, StatsWidget)
   - [ ] User interaction tests (LoginForm)
@@ -137,6 +145,13 @@ This document tracks the development progress of the Church Planner application.
 - [ ] Set up load testing for API endpoints
 - [ ] Implement accessibility testing automation
 
+#### Current Test Coverage Metrics (as of last update)
+- Statements: 59%
+- Branches: 29.92%
+- Functions: 39.28%
+- Lines: 56.94%
+- Goal: 70% for all metrics
+
 ### Deployment
 - [ ] Set up staging environment
 - [ ] Create production deployment pipeline
@@ -152,20 +167,20 @@ This document tracks the development progress of the Church Planner application.
 ## 2. Security & Authentication
 
 ### Authentication System
-- [ ] Created User model with password hashing and JWT token generation
-- [ ] Implemented authentication controllers for registration, login, and password reset
-- [ ] Created authentication middleware for route protection
-- [ ] Set up authentication routes
-- [ ] Implement user login functionality
-- [ ] Add password reset functionality
-- [ ] Create user model with proper schema definition
-- [ ] Implement JWT authentication
-- [ ] Set up protected routes
-- [ ] Improve error handling in authentication components
-- [ ] Complete user registration functionality: Added firstName and lastName fields to match User model
-- [ ] Fix JWT token generation in login and register routes
-- [ ] Fixed authentication flow: Fixed login functionality and user data handling
-- [ ] Fixed JWT token generation: Fixed by manually generating tokens in login and register routes
+- [x] Created User model with password hashing and JWT token generation
+- [x] Implemented authentication controllers for registration, login, and password reset
+- [x] Created authentication middleware for route protection
+- [x] Set up authentication routes
+- [x] Implement user login functionality
+- [x] Add password reset functionality
+- [x] Create user model with proper schema definition
+- [x] Implement JWT authentication
+- [x] Set up protected routes
+- [x] Improve error handling in authentication components
+- [x] Complete user registration functionality: Added firstName and lastName fields to match User model
+- [x] Fix JWT token generation in login and register routes
+- [x] Fixed authentication flow: Fixed login functionality and user data handling
+- [x] Fixed JWT token generation: Fixed by manually generating tokens in login and register routes
 - [ ] **CRITICAL**: Remove hardcoded JWT secrets and implement secure environment variable handling
 - [ ] **CRITICAL**: Replace localStorage token storage with HTTP-only cookies
 - [ ] **CRITICAL**: Implement CSRF protection for API endpoints
