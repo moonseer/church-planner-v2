@@ -357,6 +357,142 @@ The MongoDB Express admin interface is available at http://localhost:8081 when r
 - Username: admin
 - Password: password
 
+## API Documentation
+
+The Church Planner application provides comprehensive API documentation using Swagger/OpenAPI. This makes it easy to explore and test the available endpoints.
+
+### Accessing the API Documentation
+
+1. Start the server:
+   ```
+   cd server
+   npm run dev
+   ```
+
+2. Open your browser and navigate to:
+   ```
+   http://localhost:8080/api/docs
+   ```
+
+3. You'll see the Swagger UI interface where you can:
+   - Browse all available endpoints organized by tags
+   - See request parameters, body schemas, and response formats
+   - Test endpoints directly from the browser
+   - View models and data structures
+   - Authenticate using JWT tokens via the "Authorize" button
+
+### Available API Endpoints
+
+The following API endpoints are documented with Swagger:
+
+#### Authentication
+- `POST /api/auth/register` - Register a new user
+- `POST /api/auth/login` - Login and get authentication token
+- `GET /api/auth/me` - Get current user information
+
+#### Churches
+- `GET /api/churches` - Get all churches
+- `POST /api/churches` - Create a new church (admin only)
+- `GET /api/churches/:id` - Get a specific church
+- `PUT /api/churches/:id` - Update a church (admin only)
+- `DELETE /api/churches/:id` - Delete a church (admin only)
+
+#### Event Types
+- `GET /api/event-types` - Get all event types
+- `POST /api/event-types` - Create a new event type
+- `GET /api/event-types/:id` - Get a specific event type
+- `PUT /api/event-types/:id` - Update an event type
+- `DELETE /api/event-types/:id` - Delete an event type
+
+#### Events
+- `GET /api/events` - Get all events
+- `POST /api/events` - Create a new event
+- `GET /api/events/:id` - Get a specific event
+- `PUT /api/events/:id` - Update an event
+- `DELETE /api/events/:id` - Delete an event
+
+#### Teams
+- `GET /api/teams` - Get all teams
+- `POST /api/teams` - Create a new team
+- `GET /api/teams/:id` - Get a specific team
+- `PUT /api/teams/:id` - Update a team
+- `DELETE /api/teams/:id` - Delete a team
+
+#### Team Members
+- `GET /api/teams/:teamId/members` - Get all members of a team
+- `POST /api/teams/:teamId/members` - Add a member to a team
+- `GET /api/teams/:teamId/members/:id` - Get a specific team member
+- `PUT /api/teams/:teamId/members/:id` - Update a team member
+- `DELETE /api/teams/:teamId/members/:id` - Remove a member from a team
+
+#### Services
+- `GET /api/services` - Get all services
+- `POST /api/services` - Create a new service
+- `GET /api/services/:id` - Get a specific service
+- `PUT /api/services/:id` - Update a service
+- `DELETE /api/services/:id` - Delete a service
+
+### Authentication
+
+Most API endpoints require authentication. To authenticate:
+
+1. Register a user or login to get a JWT token
+2. Include the token in the Authorization header of your requests:
+   ```
+   Authorization: Bearer YOUR_JWT_TOKEN
+   ```
+
+In the Swagger UI, you can click the "Authorize" button and enter your token to authenticate all requests.
+
+### Known Issues
+
+The Swagger documentation currently has TypeScript linter errors related to the return types in the controller functions. These errors don't affect the functionality of the API or the documentation, but they should be addressed in future updates to improve code quality.
+
+The main error pattern is:
+```
+Type 'Promise<Response<any, Record<string, any>> | undefined>' is not assignable to type 'void | Promise<void>'
+```
+
+This occurs because the Express route handlers expect functions that return void or Promise<void>, but our controller functions are returning Response objects.
+
+## CI/CD Pipeline
+
+The Church Planner application uses GitHub Actions for continuous integration and continuous deployment. The CI/CD pipeline automates testing, building, and (in the future) deploying the application.
+
+### Workflows
+
+- **Main Workflow**: Runs tests and builds the application
+- **API Validation**: Validates the API endpoints using the project_setup.js script
+- **Code Quality**: Performs linting, type checking, and other code quality checks
+
+### Running Tests Locally
+
+Before pushing your changes, you can run the same checks that the CI pipeline will run:
+
+```bash
+# Install dependencies
+npm ci
+cd client && npm ci
+cd ../server && npm ci
+
+# Run linting
+cd client && npm run lint
+cd ../server && npm run lint
+
+# Run type checking
+cd client && npm run typecheck
+cd ../server && npm run typecheck
+
+# Run tests
+cd client && npm test
+cd ../server && npm test
+
+# Build the application
+npm run build
+```
+
+For more details about the CI/CD pipeline, see [CI-CD.md](CI-CD.md).
+
 ## License
 
 [MIT](LICENSE)

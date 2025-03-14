@@ -27,9 +27,11 @@ This document tracks the development progress of the Church Planner application.
 - [x] Improve error handling in validation script
 - [x] Fix non-JSON response handling in API requests
 - [ ] Set up CI/CD pipeline with GitHub Actions
-  - [ ] Automated testing on pull requests
-  - [ ] Code quality checks (linting, type checking)
-  - [ ] Test coverage reporting
+  - [x] Create basic CI/CD workflow configuration
+  - [x] Set up automated code quality checks (linting, type checking)
+  - [x] Configure API validation testing
+  - [ ] Implement test coverage reporting
+  - [ ] Set up automated deployment to staging/production
 - [ ] Create development, staging, and production environment configurations
 - [ ] Set up error tracking and monitoring (Sentry or similar)
 - [ ] Implement logging system for debugging and auditing
@@ -71,49 +73,18 @@ This document tracks the development progress of the Church Planner application.
 - [ ] Create user guides and administrator documentation
 
 ### API Documentation
+- [x] Set up Swagger/OpenAPI for API documentation
+- [x] Document Authentication API endpoints
 - [x] Document Church API endpoints
-  - [x] GET /api/churches - Get all churches
-  - [x] GET /api/churches/:id - Get a specific church
-  - [x] POST /api/churches - Create a new church
-  - [x] PUT /api/churches/:id - Update a church
-  - [x] DELETE /api/churches/:id - Delete a church
 - [x] Document Event Type API endpoints
-  - [x] GET /api/event-types - Get all event types
-  - [x] GET /api/event-types/:id - Get a specific event type
-  - [x] POST /api/event-types - Create a new event type
-  - [x] PUT /api/event-types/:id - Update an event type
-  - [x] DELETE /api/event-types/:id - Delete an event type
 - [x] Document Event API endpoints
-  - [x] GET /api/events - Get all events
-  - [x] GET /api/events/:id - Get a specific event
-  - [x] POST /api/events - Create a new event
-  - [x] PUT /api/events/:id - Update an event
-  - [x] DELETE /api/events/:id - Delete an event
 - [x] Document Team API endpoints
-  - [x] GET /api/teams - Get all teams
-  - [x] GET /api/teams/:id - Get a specific team
-  - [x] POST /api/teams - Create a new team
-  - [x] PUT /api/teams/:id - Update a team
-  - [x] DELETE /api/teams/:id - Delete a team
 - [x] Document Team Member API endpoints
-  - [x] GET /api/teams/:teamId/members - Get all members of a team
-  - [x] GET /api/teams/:teamId/members/:id - Get a specific team member
-  - [x] POST /api/teams/:teamId/members - Add a member to a team
-  - [x] PUT /api/teams/:teamId/members/:id - Update a team member
-  - [x] DELETE /api/teams/:teamId/members/:id - Remove a member from a team
 - [x] Document Service API endpoints
-  - [x] GET /api/services - Get all services
-  - [x] GET /api/services/:id - Get a specific service
-  - [x] POST /api/services - Create a new service
-  - [x] PUT /api/services/:id - Update a service
-  - [x] DELETE /api/services/:id - Delete a service
-- [ ] Set up Swagger/OpenAPI for API documentation
-- [ ] Create interactive API testing interface
 - [ ] Implement API versioning strategy
-- [ ] Add request/response examples for each endpoint
-- [ ] Create authentication documentation for API access
 - [ ] Document rate limiting and security measures
-- [ ] Create SDK/client library documentation
+- [x] Update README with API documentation information
+- [ ] Fix TypeScript linter errors in controller return types
 
 ### Testing Infrastructure
 - [ ] Set up Jest testing framework for the server
@@ -767,6 +738,9 @@ This document tracks the development progress of the Church Planner application.
 - [ ] Improve calendar data integration with other system components
 - [ ] Enhance calendar accessibility for all users
 - [ ] Implement application optimization recommendations
+- [x] Set up Swagger/OpenAPI for API documentation
+- [x] Document all API endpoints with Swagger
+- [ ] Fix TypeScript linter errors in controller return types
 
 ### Resolved Issues
 - [ ] Server connection issues: Fixed port conflicts by changing server port from 5000 to 8080
@@ -787,4 +761,6 @@ This document tracks the development progress of the Church Planner application.
 - [ ] Middleware configuration issue in `eventTypeRoutes.ts` with error "Router.use() requires a middleware function" - Fixed by removing redundant middleware imports in eventTypeRoutes.ts since protection is already applied at the server level
 - [ ] Event types not loading properly, suggesting an issue with the event types endpoint - Fixed by ensuring the server-side code properly handles churchId from either request parameters or the authenticated user
 - [ ] All queries for February 2025 return "Events found: 0," which may indicate a problem if events should exist - Fixed by adding detailed logging to diagnose the issue and confirming that the date range calculation is correct
-- [ ] Excessive authentication requests to `/api/auth/me` suggesting inefficient client-side polling - Fixed by updating the useAuth hook to prevent repeated API calls and use the authAPI service properly
+- [ ] Excessive authentication requests to `/api/auth/me` suggesting inefficient client-side polling - Fixed by updating the useAuth hook to prevent repeated API calls and use the authAPI service properly.
+
+## Designed by Curtis

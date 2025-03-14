@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import swaggerDocs from './config/swagger';
 
 // Import routes
 import churchRoutes from './routes/churchRoutes';
@@ -54,11 +55,16 @@ const connectDB = async () => {
 
 // Start server
 const PORT = process.env.PORT || 8080;
+const portNumber = parseInt(PORT.toString(), 10);
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   
   // Connect to database
   connectDB();
+  
+  // Setup Swagger docs
+  swaggerDocs(app, portNumber);
 });
 
 export default app; 
