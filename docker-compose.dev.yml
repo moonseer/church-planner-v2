@@ -1,57 +1,68 @@
 services:
-  # Client Service
+  # Client Service (Development)
   client:
     build:
       context: ./client
-      dockerfile: Dockerfile
-    container_name: church-planner-client
+      dockerfile: Dockerfile.dev
+    container_name: church-planner-client-dev
     restart: always
     ports:
-      - "80:80"
+      - "3000:3000"
+    volumes:
+      - ./client:/app:delegated
+      - client_node_modules:/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:8080/api
     depends_on:
       - server
     networks:
       - church-planner-network
+    command: npm run dev
 
-  # Server Service
+  # Server Service (Development)
   server:
     build:
       context: ./server
-      dockerfile: Dockerfile
-    container_name: church-planner-server
+      dockerfile: Dockerfile.dev
+    container_name: church-planner-server-dev
     restart: always
     ports:
       - "8080:8080"
-    depends_on:
-      - mongodb
+    volumes:
+      - ./server:/app:delegated
+      - server_node_modules:/app/node_modules
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - MONGO_URI=mongodb://admin:password@mongodb:27017/church_planner?authSource=admin
-      - JWT_SECRET=your_jwt_secret_here
+      - JWT_SECRET=dev_jwt_secret
       - JWT_EXPIRE=30d
       - PORT=8080
+    depends_on:
+      - mongodb
     networks:
       - church-planner-network
+    command: npm run dev
 
   # MongoDB Service
   mongodb:
     image: mongo:latest
-    container_name: church-planner-mongodb
+    container_name: church-planner-mongodb-dev
     restart: always
     ports:
       - "27017:27017"
     volumes:
-      - mongodb_data:/data/db
+      - mongodb_data_dev:/data/db
     environment:
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=password
     networks:
       - church-planner-network
 
-  # MongoDB Express Web UI (optional but helpful for development)
+  # MongoDB Express Web UI
   mongo-express:
     image: mongo-express:latest
-    container_name: church-planner-mongo-express
+    container_name: church-planner-mongo-express-dev
     restart: always
     ports:
       - "8081:8081"
@@ -69,5 +80,7 @@ networks:
     driver: bridge
 
 volumes:
-  mongodb_data:
-    driver: local 
+  mongodb_data_dev:
+    driver: local
+  client_node_modules:
+  server_node_modules: 
