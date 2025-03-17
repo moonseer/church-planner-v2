@@ -17,9 +17,13 @@ class UserService extends BaseService<IUserDocument> {
   /**
    * Find a user by email
    * @param email User email
+   * @param includePassword Whether to include the password and login attempt fields
    * @returns User document or null if not found
    */
-  async findByEmail(email: string): Promise<IUserDocument | null> {
+  async findByEmail(email: string, includePassword = false): Promise<IUserDocument | null> {
+    if (includePassword) {
+      return await User.findOne({ email }).select('+password');
+    }
     return await User.findOne({ email });
   }
 

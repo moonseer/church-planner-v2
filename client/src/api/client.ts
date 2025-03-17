@@ -1,143 +1,127 @@
-import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import { ApiSuccessResponse, ApiErrorResponse, HttpStatus } from '@shared/types/api';
+import { ApiResponse, ApiError } from '@shared/types/api';
 
-/**
- * Configuration for the API client
- */
-export interface ApiClientConfig {
-  baseURL: string;
-  timeout?: number;
+interface RequestOptions {
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
   headers?: Record<string, string>;
+  body?: unknown;
+  csrfToken?: string;
+}
+
+interface ApiClientConfig {
+  baseUrl: string;
 }
 
 /**
- * Default configuration for the API client
+ * API client for making network requests
  */
-const defaultConfig: ApiClientConfig = {
-  baseURL: import.meta.env.VITE_API_URL || '/api',
-  timeout: 30000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-};
+export class ApiClient {
+  private baseUrl: string;
 
-/**
- * API client for making type-safe requests
- */
-class ApiClient {
-  private client: AxiosInstance;
-
-  constructor(config: ApiClientConfig = defaultConfig) {
-    this.client = axios.create({
-      baseURL: config.baseURL,
-      timeout: config.timeout || defaultConfig.timeout,
-      headers: { ...defaultConfig.headers, ...config.headers },
-    });
-
-    // Add request interceptor for authentication
-    this.client.interceptors.request.use(
-      (config: InternalAxiosRequestConfig) => {
-        const token = localStorage.getItem('token');
-        if (token && config.headers) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-      },
-      (error: unknown) => Promise.reject(error)
-    );
-
-    // Add response interceptor for error handling
-    this.client.interceptors.response.use(
-      (response: AxiosResponse) => response,
-      (error: AxiosError) => this.handleError(error)
-    );
+  constructor(config: ApiClientConfig) {
+    this.baseUrl = config.baseUrl;
   }
 
   /**
-   * Handle API error responses
+   * Make an API request
    */
-  private handleError(error: AxiosError): Promise<never> {
-    if (error.response) {
-      const status = error.response.status;
-      
-      // Handle authentication errors
-      if (status === HttpStatus.UNAUTHORIZED) {
-        // Clear token if authentication fails
-        localStorage.removeItem('token');
+  public async request<T>(
+    endpoint: string,
+    options: RequestOptions
+  ): Promise<T> {
+    const { method, headers = {}, body, csrfToken } = options;
+    const url = `${this.baseUrl}${endpoint}`;
+
+    // Set up headers with content type and CSRF token if provided
+    const requestHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...headers,
+    };
+
+    // Add CSRF token if provided
+    if (csrfToken) {
+      requestHeaders['CSRF-Token'] = csrfToken;
+    }
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: requestHeaders,
+        body: body ? JSON.stringify(body) : undefined,
+        credentials: 'include', // Always include credentials for cookie-based auth
+      });
+
+      // Check if response is ok (status 200-299)
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || errorData.error || 'An error occurred'
+        );
       }
 
-      // Convert error response to ApiErrorResponse
-      const errorResponse = error.response.data as ApiErrorResponse;
-      
-      return Promise.reject(errorResponse);
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await response.json();
+        return data as T;
+      }
+
+      // For non-JSON responses
+      const text = await response.text();
+      return { message: text } as unknown as T;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('An unexpected error occurred');
     }
-    
-    if (error.request) {
-      // The request was made but no response was received
-      return Promise.reject({
-        success: false,
-        error: 'No response from server',
-        statusCode: 503, // Service Unavailable
-      } as ApiErrorResponse);
-    }
-    
-    // Something happened in setting up the request
-    return Promise.reject({
-      success: false,
-      error: error.message || 'Unknown error occurred',
-      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-    } as ApiErrorResponse);
   }
 
   /**
    * Make a GET request
    */
-  async get<T>(
-    url: string,
-    config?: AxiosRequestConfig
-  ): Promise<ApiSuccessResponse<T>> {
-    const response = await this.client.get<ApiSuccessResponse<T>>(url, config);
-    return response.data;
+  public async get<T>(endpoint: string, csrfToken?: string): Promise<T> {
+    return this.request<T>(endpoint, { method: 'GET', csrfToken });
   }
 
   /**
    * Make a POST request
    */
-  async post<T, D = unknown>(
-    url: string,
-    data?: D,
-    config?: AxiosRequestConfig
-  ): Promise<ApiSuccessResponse<T>> {
-    const response = await this.client.post<ApiSuccessResponse<T>>(url, data, config);
-    return response.data;
+  public async post<T>(
+    endpoint: string,
+    data?: unknown,
+    csrfToken?: string
+  ): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: 'POST',
+      body: data,
+      csrfToken,
+    });
   }
 
   /**
    * Make a PUT request
    */
-  async put<T, D = unknown>(
-    url: string,
-    data?: D,
-    config?: AxiosRequestConfig
-  ): Promise<ApiSuccessResponse<T>> {
-    const response = await this.client.put<ApiSuccessResponse<T>>(url, data, config);
-    return response.data;
+  public async put<T>(
+    endpoint: string,
+    data?: unknown,
+    csrfToken?: string
+  ): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: 'PUT',
+      body: data,
+      csrfToken,
+    });
   }
 
   /**
    * Make a DELETE request
    */
-  async delete<T>(
-    url: string,
-    config?: AxiosRequestConfig
-  ): Promise<ApiSuccessResponse<T>> {
-    const response = await this.client.delete<ApiSuccessResponse<T>>(url, config);
-    return response.data;
+  public async delete<T>(endpoint: string, csrfToken?: string): Promise<T> {
+    return this.request<T>(endpoint, { method: 'DELETE', csrfToken });
   }
 }
 
-// Create a singleton instance
-const apiClient = new ApiClient();
-
-export default apiClient;
-export { ApiClient }; 
+// Create default API client instance
+export const apiClient = new ApiClient({
+  baseUrl: import.meta.env.VITE_API_URL || '/api',
+}); 

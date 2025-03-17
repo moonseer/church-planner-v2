@@ -1,8 +1,18 @@
 import express from 'express';
-import { register, login, getCurrentUser } from '../controllers/authController';
+import { register, login, getCurrentUser, logout } from '../controllers/authController';
 import { protect } from '../middleware/auth';
+import rateLimit from 'express-rate-limit';
 
 const router = express.Router();
+
+// Rate limiting for authentication endpoints
+const authLimiter = rateLimit({
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes by default
+  max: parseInt(process.env.RATE_LIMIT_MAX || '100', 10), // Limit each IP to 100 requests per windowMs
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  message: 'Too many requests from this IP, please try again later',
+});
 
 /**
  * @swagger
@@ -70,14 +80,12 @@ const router = express.Router();
  *         success:
  *           type: boolean
  *           example: true
- *         token:
- *           type: string
- *           description: JWT token for authentication
  *         data:
  *           type: object
  *           properties:
  *             user:
  *               $ref: '#/components/schemas/User'
+ *       description: Authentication response with user data. JWT token is sent as an HTTP-only cookie.
  */
 
 /**
@@ -115,9 +123,12 @@ const router = express.Router();
  *                 type: string
  *                 format: password
  *                 description: The password of the user
+ *               churchName:
+ *                 type: string
+ *                 description: Optional name of the church to create or join
  *     responses:
  *       201:
- *         description: User registered successfully
+ *         description: User registered successfully. JWT token is set as an HTTP-only cookie.
  *         content:
  *           application/json:
  *             schema:
@@ -128,8 +139,8 @@ const router = express.Router();
  *         description: Server error
  */
 
-// Public routes
-router.post('/register', register);
+// Public routes with rate limiting
+router.post('/register', authLimiter, register);
 
 /**
  * @swagger
@@ -145,7 +156,7 @@ router.post('/register', register);
  *             $ref: '#/components/schemas/LoginCredentials'
  *     responses:
  *       200:
- *         description: User logged in successfully
+ *         description: User logged in successfully. JWT token is set as an HTTP-only cookie.
  *         content:
  *           application/json:
  *             schema:
@@ -156,7 +167,34 @@ router.post('/register', register);
  *         description: Server error
  */
 
-router.post('/login', login);
+router.post('/login', authLimiter, login);
+
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Log out the current user
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: User logged out successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *                       example: Logged out successfully
+ */
+
+router.post('/logout', logout);
 
 /**
  * @swagger

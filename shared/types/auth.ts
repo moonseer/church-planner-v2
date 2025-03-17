@@ -29,6 +29,9 @@ export interface IUserBase extends IUserWithEmail, IUserWithRole {
   // Combines properties from IUserIdentity, IUserWithEmail and IUserWithRole
 }
 
+// Alias User to IUserBase for simpler imports
+export type User = IUserBase;
+
 // Church information (minimal version used in user responses)
 export interface IChurchInfo {
   id: string;
@@ -78,29 +81,34 @@ export interface IRegisterRequest extends IRegistrationCredentials, IChurchRegis
   // Combines registration credentials with optional church information
 }
 
-// Authentication token response
-export interface IAuthTokenResponse {
-  token: string;
-}
-
 // User data response
 export interface IUserDataResponse {
   user: IUserWithChurch;
 }
 
 // Login Response
-export interface ILoginResponse extends IUserDataResponse, IAuthTokenResponse {
-  // Combines user data with authentication token
+export interface ILoginResponse extends IUserDataResponse {
+  // Just contains user data
 }
 
 // Register Response
-export interface IRegisterResponse extends ILoginResponse {
-  // Same structure as login response
+export interface IRegisterResponse extends IUserDataResponse {
+  // Same structure as login response but without token
 }
 
 // Get Current User Response
 export interface IUserResponse extends IUserDataResponse {
   // Just contains user data
+}
+
+// Logout Response
+export interface ILogoutResponse {
+  message: string;
+}
+
+// CSRF Token Response
+export interface ICsrfTokenResponse {
+  csrfToken: string;
 }
 
 // Authentication context

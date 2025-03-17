@@ -1,143 +1,197 @@
-import { useState, useEffect, useCallback } from 'react';
-import { authApi } from '../index';
-import { ILoginRequest, IRegisterRequest, IUserWithChurch } from '@shared/types/auth';
-import { ApiErrorResponse } from '@shared/types/api';
+import { useState, useEffect } from 'react';
+import { User } from '@shared/types/auth';
+import { authAPI } from '../services/authAPI';
 
 interface AuthState {
-  user: IUserWithChurch | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
+  user: User | null;
+  loading: boolean;
   error: string | null;
+  isAuthenticated: boolean;
 }
 
 /**
- * Hook for authentication
+ * Hook for authentication management
  */
-export default function useAuth() {
-  const [authState, setAuthState] = useState<AuthState>({
+export const useAuth = () => {
+  const [state, setState] = useState<AuthState>({
     user: null,
-    isAuthenticated: false,
-    isLoading: true,
+    loading: true,
     error: null,
+    isAuthenticated: false,
   });
+  const [csrfToken, setCsrfToken] = useState<string | null>(null);
 
-  /**
-   * Load user from API
-   */
-  const loadUser = useCallback(async () => {
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-      setAuthState({
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null,
-      });
-      return;
-    }
-
-    setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
-
+  // Function to get CSRF token
+  const fetchCsrfToken = async () => {
     try {
-      const response = await authApi.getCurrentUser();
-      setAuthState({
-        user: response.data.user,
-        isAuthenticated: true,
-        isLoading: false,
-        error: null,
+      const response = await fetch('/api/csrf-token', {
+        credentials: 'include' // Important for cookies
       });
+      const data = await response.json();
+      setCsrfToken(data.csrfToken);
     } catch (error) {
-      const errorResponse = error as ApiErrorResponse;
-      localStorage.removeItem('token');
-      setAuthState({
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: errorResponse.error as string,
-      });
+      console.error('Error fetching CSRF token:', error);
     }
+  };
+
+  // Check user authentication on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        setState((prev) => ({ ...prev, loading: true }));
+        
+        // Get current user with credentials
+        const response = await authAPI.getCurrentUser();
+        
+        if (response.user) {
+          setState({
+            user: response.user,
+            loading: false,
+            error: null,
+            isAuthenticated: true,
+          });
+          
+          // Get CSRF token after successful auth
+          await fetchCsrfToken();
+        } else {
+          setState({
+            user: null,
+            loading: false,
+            error: null,
+            isAuthenticated: false,
+          });
+        }
+      } catch (error) {
+        setState({
+          user: null,
+          loading: false,
+          error: 'Authentication failed',
+          isAuthenticated: false,
+        });
+      }
+    };
+
+    checkAuth();
   }, []);
 
-  /**
-   * Load user on mount
-   */
-  useEffect(() => {
-    loadUser();
-  }, [loadUser]);
-
-  /**
-   * Register a new user
-   */
-  const register = async (userData: IRegisterRequest) => {
-    setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
-
+  // Login function
+  const login = async (email: string, password: string) => {
     try {
-      const response = await authApi.register(userData);
-      localStorage.setItem('token', response.data.token);
-      setAuthState({
-        user: response.data.user,
-        isAuthenticated: true,
-        isLoading: false,
-        error: null,
-      });
-      return response.data;
+      setState((prev) => ({ ...prev, loading: true, error: null }));
+      
+      const response = await authAPI.login({ email, password });
+      
+      if (response.user) {
+        setState({
+          user: response.user,
+          loading: false,
+          error: null,
+          isAuthenticated: true,
+        });
+        
+        // Get CSRF token after login
+        await fetchCsrfToken();
+        
+        return { success: true };
+      } else {
+        setState((prev) => ({
+          ...prev,
+          loading: false,
+          error: 'Login failed',
+        }));
+        return { success: false, error: 'Login failed' };
+      }
     } catch (error) {
-      const errorResponse = error as ApiErrorResponse;
-      setAuthState((prev) => ({
+      const errorMessage = error instanceof Error ? error.message : 'Login failed';
+      setState((prev) => ({
         ...prev,
-        isLoading: false,
-        error: errorResponse.error as string,
+        loading: false,
+        error: errorMessage,
       }));
-      throw error;
+      return { success: false, error: errorMessage };
     }
   };
 
-  /**
-   * Login a user
-   */
-  const login = async (credentials: ILoginRequest) => {
-    setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
-
+  // Register function
+  const register = async (
+    firstName: string,
+    lastName: string,
+    email: string,
+    password: string,
+    churchName?: string
+  ) => {
     try {
-      const response = await authApi.login(credentials);
-      localStorage.setItem('token', response.data.token);
-      setAuthState({
-        user: response.data.user,
-        isAuthenticated: true,
-        isLoading: false,
-        error: null,
+      setState((prev) => ({ ...prev, loading: true, error: null }));
+      
+      const response = await authAPI.register({
+        name: `${firstName} ${lastName}`,
+        email,
+        password,
+        churchName,
       });
-      return response.data;
+      
+      if (response.user) {
+        setState({
+          user: response.user,
+          loading: false,
+          error: null,
+          isAuthenticated: true,
+        });
+        
+        // Get CSRF token after registration
+        await fetchCsrfToken();
+        
+        return { success: true };
+      } else {
+        setState((prev) => ({
+          ...prev,
+          loading: false,
+          error: 'Registration failed',
+        }));
+        return { success: false, error: 'Registration failed' };
+      }
     } catch (error) {
-      const errorResponse = error as ApiErrorResponse;
-      setAuthState((prev) => ({
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed';
+      setState((prev) => ({
         ...prev,
-        isLoading: false,
-        error: errorResponse.error as string,
+        loading: false,
+        error: errorMessage,
       }));
-      throw error;
+      return { success: false, error: errorMessage };
     }
   };
 
-  /**
-   * Logout a user
-   */
-  const logout = () => {
-    localStorage.removeItem('token');
-    setAuthState({
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
-      error: null,
-    });
+  // Logout function
+  const logout = async () => {
+    try {
+      await authAPI.logout();
+      
+      setState({
+        user: null,
+        loading: false,
+        error: null,
+        isAuthenticated: false,
+      });
+      
+      setCsrfToken(null);
+      
+      return { success: true };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Logout failed';
+      setState((prev) => ({
+        ...prev,
+        error: errorMessage,
+      }));
+      return { success: false, error: errorMessage };
+    }
   };
 
   return {
-    ...authState,
-    register,
+    ...state,
     login,
+    register,
     logout,
-    loadUser,
+    csrfToken,
+    refreshCsrfToken: fetchCsrfToken
   };
-} 
+}; 

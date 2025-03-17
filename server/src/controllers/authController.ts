@@ -18,16 +18,34 @@ import { sendSuccessResponse, sendErrorResponse, handleError } from '../utils/re
 import { Request, Response } from 'express';
 import { userService, churchService } from '../services';
 
+// Cookie options for JWT token
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+  maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in milliseconds
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' as 'none' | 'lax',
+};
+
 /**
  * Generate JWT token
  */
 const generateToken = (id: string): string => {
-  const jwtSecret = process.env.JWT_SECRET || 'defaultsecret';
+  // Get JWT secret from environment variables
+  const jwtSecret = process.env.JWT_SECRET;
+  
+  if (!jwtSecret) {
+    console.warn('WARNING: JWT_SECRET environment variable not set. Using a less secure fallback.');
+    // In production, this should never happen as the app should fail to start without a JWT_SECRET
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET must be set in production environment');
+    }
+  }
+  
   const payload = { id };
   
   // @ts-ignore - Ignoring TypeScript error for JWT sign
-  return jwt.sign(payload, jwtSecret, {
-    expiresIn: '30d',
+  return jwt.sign(payload, jwtSecret || 'defaultsecret', {
+    expiresIn: process.env.JWT_EXPIRE || '30d',
   });
 };
 
@@ -93,10 +111,16 @@ export const register = async (req: Request<{}, {}, IRegisterRequest>, res: Resp
     if (user) {
       // Format user data for response
       const userData = formatUserResponse(user, church);
+      
+      // Generate JWT token
+      const token = generateToken(user._id.toString());
+      
+      // Set token in HTTP-only cookie
+      res.cookie('token', token, cookieOptions);
 
       const responseData: IRegisterResponse = {
         user: userData,
-        token: generateToken(user._id.toString()),
+        // No token in response body
       };
 
       return sendSuccessResponse(res, responseData, HttpStatus.CREATED);
@@ -117,19 +141,47 @@ export const login = async (req: Request<{}, {}, ILoginRequest>, res: Response):
   try {
     const { email, password } = req.body;
 
-    // Check for user email
-    const user = await userService.findByEmail(email);
+    // Check for user email - include password for verification
+    // and include login attempt fields for account locking
+    const user = await userService.findByEmail(email, true);
 
     if (!user) {
       return sendErrorResponse(res, 'Invalid credentials', HttpStatus.UNAUTHORIZED);
+    }
+
+    // Check if account is locked
+    if (user.lockUntil && user.lockUntil > new Date()) {
+      const lockTimeRemaining = Math.ceil((user.lockUntil.getTime() - Date.now()) / 60000); // Convert to minutes
+      return sendErrorResponse(
+        res, 
+        `Account is locked due to too many failed attempts. Try again in ${lockTimeRemaining} minutes.`, 
+        HttpStatus.TOO_MANY_REQUESTS
+      );
     }
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
+      // Increment login attempts and potentially lock account
+      await user.incrementLoginAttempts();
+      
+      // If account is now locked after incrementing attempts
+      if (user.lockUntil && user.lockUntil > new Date()) {
+        return sendErrorResponse(
+          res,
+          'Account locked due to too many failed attempts. Try again in 15 minutes.',
+          HttpStatus.TOO_MANY_REQUESTS
+        );
+      }
+      
       return sendErrorResponse(res, 'Invalid credentials', HttpStatus.UNAUTHORIZED);
     }
+
+    // Successful login - reset login attempts
+    user.loginAttempts = 0;
+    user.lockUntil = undefined;
+    await user.save();
 
     // Get user with church data
     const userWithChurch = await userService.findUserWithChurch(user._id.toString());
@@ -140,16 +192,37 @@ export const login = async (req: Request<{}, {}, ILoginRequest>, res: Response):
 
     // Format user data for response
     const userData = formatUserResponse(userWithChurch, userWithChurch.church as any);
+    
+    // Generate JWT token
+    const token = generateToken(user._id.toString());
+    
+    // Set token in HTTP-only cookie
+    res.cookie('token', token, cookieOptions);
 
     const responseData: ILoginResponse = {
       user: userData,
-      token: generateToken(user._id.toString()),
+      // No token in response body
     };
 
     return sendSuccessResponse(res, responseData);
   } catch (error) {
     handleError(res, error);
   }
+};
+
+/**
+ * @desc    Logout user
+ * @route   POST /api/auth/logout
+ * @access  Public
+ */
+export const logout = (req: Request, res: Response): void => {
+  // Clear the auth cookie
+  res.cookie('token', '', {
+    httpOnly: true,
+    expires: new Date(0), // Expire immediately
+  });
+  
+  sendSuccessResponse(res, { message: 'Logged out successfully' });
 };
 
 /**

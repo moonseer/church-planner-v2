@@ -24,6 +24,10 @@ const swaggerOptions = {
         url: 'http://localhost:8080',
         description: 'Development server',
       },
+      {
+        url: 'https://churchplanner.example.com',
+        description: 'Production server',
+      },
     ],
     components: {
       securitySchemes: {
@@ -47,7 +51,7 @@ const swaggerOptions = {
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
 // Function to setup our docs
-const swaggerDocs = (app: any, port: number) => {
+const swaggerDocs = (app: any, port?: number) => {
   // Route-Handler to visit our docs
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
   
@@ -57,7 +61,12 @@ const swaggerDocs = (app: any, port: number) => {
     res.send(swaggerSpec);
   });
   
-  console.log(`📝 API Documentation available at http://localhost:${port}/api/docs`);
+  if (port) {
+    console.log(`📝 API Documentation available at http://localhost:${port}/api/docs`);
+  } else {
+    const configuredPort = process.env.PORT || 8080;
+    console.log(`📝 API Documentation available at the /api/docs endpoint (port: ${configuredPort})`);
+  }
 };
 
 export default swaggerDocs; 

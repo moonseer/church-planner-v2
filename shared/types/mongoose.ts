@@ -81,9 +81,18 @@ export interface UserAuth {
 }
 
 /**
+ * User security details for account locking
+ */
+export interface UserSecurity {
+  passwordLastChanged: Date;
+  loginAttempts: number;
+  lockUntil?: Date;
+}
+
+/**
  * User document interface - represents a MongoDB user document
  */
-export interface IUserDocument extends BaseDocument, Named, UserAuth {
+export interface IUserDocument extends BaseDocument, Named, UserAuth, UserSecurity {
   church?: Types.ObjectId | IChurchDocument;
 }
 

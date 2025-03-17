@@ -32,13 +32,9 @@ export const protect = async (
   try {
     let token;
 
-    // Check for token in Authorization header
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith('Bearer')
-    ) {
-      // Get token from header
-      token = req.headers.authorization.split(' ')[1];
+    // Get token from cookie
+    if (req.cookies && req.cookies.token) {
+      token = req.cookies.token;
     }
 
     // Make sure token exists
@@ -48,9 +44,19 @@ export const protect = async (
     }
 
     try {
+      // Get JWT secret from environment variables
+      const jwtSecret = process.env.JWT_SECRET;
+      
+      if (!jwtSecret) {
+        console.warn('WARNING: JWT_SECRET environment variable not set. Using a less secure fallback.');
+        // In production, this should never happen as the app should fail to start without a JWT_SECRET
+        if (process.env.NODE_ENV === 'production') {
+          throw new Error('JWT_SECRET must be set in production environment');
+        }
+      }
+      
       // Verify token
-      const jwtSecret = process.env.JWT_SECRET || 'defaultsecret';
-      const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
+      const decoded = jwt.verify(token, jwtSecret || 'defaultsecret') as JwtPayload;
 
       // Get user from the token
       const user = await User.findById(decoded.id).select('-password');
