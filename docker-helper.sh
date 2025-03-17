@@ -101,7 +101,7 @@ function start_dev {
   docker-compose -f docker-compose.dev.yml up -d
   echo -e "${GREEN}Development environment started.${NC}"
   echo -e "${YELLOW}Services:${NC}"
-  echo -e "  - Client: ${GREEN}http://localhost:3000${NC}"
+  echo -e "  - Client: ${GREEN}http://localhost:3030${NC}"
   echo -e "  - Server API: ${GREEN}http://localhost:8080/api${NC}"
   echo -e "  - MongoDB Express: ${GREEN}http://localhost:8081${NC}"
   

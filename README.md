@@ -499,7 +499,7 @@ cd ../server && npm test
 npm run build
 ```
 
-For more details about the CI/CD pipeline, see [CI-CD.md](CI-CD.md).
+For more details about the CI/CD pipeline, see the deployment section in [Progress](docs/progress.md).
 
 ## License
 
@@ -507,14 +507,18 @@ For more details about the CI/CD pipeline, see [CI-CD.md](CI-CD.md).
 
 ## Documentation
 
-- [API Documentation](docs/API.md)
+- [API Documentation](docs/api-docs-tasks.md)
 - [Environment Configuration](docs/ENVIRONMENTS.md)
-- [Docker Setup](docs/DOCKER.md)
+- [Docker Setup](docs/DOCKER_SETUP.md)
 - [Code Quality](docs/CODE_QUALITY.md)
 - [Test Coverage](docs/TEST_COVERAGE.md)
 - [Error Tracking](docs/ERROR_TRACKING.md)
 - [Logging](docs/LOGGING.md)
 - [Monitoring](docs/MONITORING.md)
+- [Security](docs/SECURITY.md)
+- [Password Policy](docs/PASSWORD_POLICY.md)
+- [Type Safety](docs/TYPE_SAFETY.md)
+- [Progress](docs/progress.md)
 
 ## Monitoring
 
@@ -530,7 +534,7 @@ The application includes a comprehensive monitoring and observability stack:
 ### Monitoring Tools
 
 - **Prometheus**: http://localhost:9090 (when running with Docker)
-- **Grafana**: http://localhost:3000 (when running with Docker)
+- **Grafana**: http://localhost:3030 (when running with Docker)
   - Default credentials: admin/admin
 
 ### Documentation

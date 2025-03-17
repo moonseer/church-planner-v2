@@ -100,7 +100,7 @@ services:
 ### Accessing Monitoring Tools
 
 - **Prometheus**: http://localhost:9090
-- **Grafana**: http://localhost:3000 (default credentials: admin/admin)
+- **Grafana**: http://localhost:3030 (default credentials: admin/admin)
 - **Loki**: http://localhost:3100 (accessed through Grafana)
 
 ## Metrics Implementation

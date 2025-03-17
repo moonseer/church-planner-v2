@@ -44,7 +44,7 @@ docker-compose -f docker-compose.dev.yml up -d
 ```
 
 This will start:
-- Client (React) on http://localhost:3000
+- Client (React) on http://localhost:3030
 - Server (Node.js) on http://localhost:8080
 - MongoDB on port 27017
 - MongoDB Express (web UI) on http://localhost:8081

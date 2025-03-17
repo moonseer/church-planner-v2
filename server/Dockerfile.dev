@@ -8,7 +8,8 @@ COPY package.json package-lock.json ./
 # Install all dependencies including devDependencies
 # Add specific missing packages that might not be in package.json
 RUN npm ci || npm install && \
-    npm install --no-save morgan winston winston-daily-rotate-file @sentry/node
+    npm install --no-save morgan winston winston-daily-rotate-file @sentry/node \
+    cookie-parser csurf cors dotenv mongoose express jsonwebtoken bcryptjs
 
 # Expose the server port
 EXPOSE 8080

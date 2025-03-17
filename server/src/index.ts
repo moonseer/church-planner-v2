@@ -30,6 +30,17 @@ import { setupDbMonitoring } from './utils/dbMonitoring';
 // Load environment variables
 dotenv.config();
 
+// Add debug logging
+console.log('=============================================');
+console.log('SERVER STARTING UP - DEBUG INFORMATION');
+console.log('=============================================');
+console.log('Environment:', process.env.NODE_ENV);
+console.log('Port:', process.env.PORT);
+console.log('MongoDB URI:', process.env.MONGO_URI ? 'Set (hidden for security)' : 'NOT SET');
+console.log('JWT Secret:', process.env.JWT_SECRET ? 'Set (hidden for security)' : 'NOT SET');
+console.log('Client URL:', process.env.CLIENT_URL);
+console.log('=============================================');
+
 // Create Express app
 const app = express();
 
@@ -74,7 +85,7 @@ app.use((req, res, next) => {
 
 // Middleware
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: process.env.CLIENT_URL || 'http://localhost:3030',
   credentials: true, // This is important for cookies to work with CORS
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization', 'CSRF-Token']
@@ -129,15 +140,40 @@ app.get('/', (req, res) => {
 // Connect to MongoDB
 const connectDB = async () => {
   try {
+    console.log('Attempting to connect to MongoDB...');
+    
     if (!process.env.MONGO_URI) {
+      console.error('MongoDB connection string is not defined in environment variables');
       throw new Error('MongoDB connection string is not defined in environment variables');
     }
     
-    const conn = await mongoose.connect(process.env.MONGO_URI);
+    console.log(`Connecting to MongoDB at: ${process.env.MONGO_URI.split('@')[1] || 'URI hidden'}`);
+    
+    const conn = await mongoose.connect(process.env.MONGO_URI, {
+      // Additional connection options if needed
+    });
+    
     console.log(`MongoDB Connected: ${conn.connection.host}`);
+    console.log('Database connection established successfully');
+    return true;
   } catch (error: any) {
     console.error(`Error connecting to MongoDB: ${error.message}`);
-    process.exit(1);
+    console.error('Full error:', error);
+    
+    // More informative error message based on error type
+    if (error.name === 'MongoNetworkError') {
+      console.error('MongoDB network error - Check if MongoDB container is running and network is properly configured');
+    } else if (error.name === 'MongoServerSelectionError') {
+      console.error('MongoDB server selection error - Check MongoDB server status and authentication credentials');
+    }
+    
+    // Don't exit immediately in development to see the error
+    if (process.env.NODE_ENV === 'production') {
+      process.exit(1);
+    } else {
+      console.log('Not exiting in development mode, but MongoDB connection failed');
+      return false;
+    }
   }
 };
 
@@ -153,41 +189,54 @@ setupUnhandledRejections();
 // Start server
 const PORT = process.env.PORT || 8080;
 
-// Connect to database
-connectDB().then(() => {
+// Connect to database and then start server
+connectDB().then((connected) => {
   // Initialize Swagger
   swaggerDocs(app);
 
-  if (process.env.NODE_ENV === 'production') {
-    try {
-      // Check if SSL certificate files exist
-      const sslOptions = {
-        key: fs.readFileSync(process.env.SSL_KEY_PATH || path.join(__dirname, '../ssl/key.pem')),
-        cert: fs.readFileSync(process.env.SSL_CERT_PATH || path.join(__dirname, '../ssl/cert.pem'))
-      };
-      
-      // Create HTTPS server
-      https.createServer(sslOptions, app).listen(PORT, () => {
-        logger.info(`Server running in production mode on port ${PORT} (HTTPS)`);
-      });
-      
-      // Optional HTTP server that redirects to HTTPS
-      http.createServer((req, res) => {
-        res.writeHead(301, { 'Location': `https://${req.headers.host}${req.url}` });
-        res.end();
-      }).listen(process.env.HTTP_PORT || 8081);
-      
-    } catch (error) {
-      logger.error('Failed to start HTTPS server, falling back to HTTP:', error);
+  if (connected || process.env.NODE_ENV === 'development') {
+    console.log('Starting server...');
+    
+    if (process.env.NODE_ENV === 'production') {
+      try {
+        // Check if SSL certificate files exist
+        const sslOptions = {
+          key: fs.readFileSync(process.env.SSL_KEY_PATH || path.join(__dirname, '../ssl/key.pem')),
+          cert: fs.readFileSync(process.env.SSL_CERT_PATH || path.join(__dirname, '../ssl/cert.pem'))
+        };
+        
+        // Create HTTPS server
+        https.createServer(sslOptions, app).listen(PORT, () => {
+          logger.info(`Server running in production mode on port ${PORT} (HTTPS)`);
+          console.log(`Server running in production mode on port ${PORT} (HTTPS)`);
+        });
+        
+        // Optional HTTP server that redirects to HTTPS
+        http.createServer((req, res) => {
+          res.writeHead(301, { 'Location': `https://${req.headers.host}${req.url}` });
+          res.end();
+        }).listen(process.env.HTTP_PORT || 8081);
+        
+      } catch (error) {
+        logger.error('Failed to start HTTPS server, falling back to HTTP:', error);
+        console.error('Failed to start HTTPS server, falling back to HTTP:', error);
+        
+        app.listen(PORT, () => {
+          logger.warn(`Server running in production mode on port ${PORT} (HTTP - Not Secure)`);
+          console.log(`Server running in production mode on port ${PORT} (HTTP - Not Secure)`);
+        });
+      }
+    } else {
+      // Development mode - use HTTP
       app.listen(PORT, () => {
-        logger.warn(`Server running in production mode on port ${PORT} (HTTP - Not Secure)`);
+        logger.info(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+        console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+        console.log(`API Documentation available at http://localhost:${PORT}/api/docs`);
+        console.log(`Health check endpoint available at http://localhost:${PORT}/api/health`);
       });
     }
   } else {
-    // Development mode - use HTTP
-    app.listen(PORT, () => {
-      logger.info(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-    });
+    console.error('Server not started due to database connection failure');
   }
 });
 

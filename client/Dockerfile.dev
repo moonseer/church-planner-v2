@@ -8,8 +8,8 @@ COPY package.json package-lock.json ./
 # Install dependencies - use install instead of ci to update the lock file if needed
 RUN npm install
 
-# Expose the development server port
-EXPOSE 3000
+# Expose the development server port (Vite uses 5173 by default)
+EXPOSE 5173
 
-# Start development server
+# Start development server with host binding
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"] 

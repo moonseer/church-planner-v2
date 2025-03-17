@@ -39,23 +39,23 @@ This document tracks the development progress of the Church Planner application.
   - [x] Created Jest configuration for server tests
   - [x] Created Vitest configuration for client tests
   - [x] Added coverage thresholds and reporting options
-  - [x] Created TEST_COVERAGE.md documentation
+  - [x] Created test coverage documentation
 - [x] Create development, staging, and production environment configurations
   - [x] Created .env.example template file
   - [x] Created environment-specific .env files
   - [x] Added environment variables for different settings
-  - [x] Created ENVIRONMENTS.md documentation
+  - [x] Created environment configuration documentation
 - [x] Set up error tracking and monitoring (Sentry or similar)
   - [x] Implemented Sentry integration for error tracking
   - [x] Created custom error handling utilities
   - [x] Added global error handler middleware
-  - [x] Created ERROR_TRACKING.md documentation
+  - [x] Created error tracking documentation
 - [x] Implement logging system for debugging and auditing
   - [x] Created Winston logger configuration
   - [x] Added Morgan for HTTP request logging
   - [x] Implemented environment-specific log levels
   - [x] Added file-based logging for production
-  - [x] Created LOGGING.md documentation
+  - [x] Created logging documentation
 
 ### Containerization
 - [x] Set up MongoDB and MongoDB Express in Docker Compose
@@ -262,11 +262,11 @@ This document tracks the development progress of the Church Planner application.
 - [x] Fix JWT token generation in login and register routes
 - [x] Fixed authentication flow: Fixed login functionality and user data handling
 - [x] Fixed JWT token generation: Fixed by manually generating tokens in login and register routes
-- [ ] **CRITICAL**: Remove hardcoded JWT secrets and implement secure environment variable handling
-- [ ] **CRITICAL**: Replace localStorage token storage with HTTP-only cookies
-- [ ] **CRITICAL**: Implement CSRF protection for API endpoints
-- [ ] **CRITICAL**: Add rate limiting for authentication endpoints
-- [ ] Implement proper password policies (complexity, expiration, etc.)
+- [x] **CRITICAL**: Remove hardcoded JWT secrets and implement secure environment variable handling
+- [x] **CRITICAL**: Replace localStorage token storage with HTTP-only cookies
+- [x] **CRITICAL**: Implement CSRF protection for API endpoints
+- [x] **CRITICAL**: Add rate limiting for authentication endpoints
+- [x] Implement proper password policies (complexity, expiration, etc.)
 - [ ] Create user profile management
 - [ ] Implement church profile management
 - [ ] Create role-based access control system
@@ -275,21 +275,21 @@ This document tracks the development progress of the Church Planner application.
 - [ ] Implement OAuth integration (Google, Facebook)
 - [ ] Add team/ministry assignment functionality
 - [ ] Implement multi-factor authentication
-- [ ] Create account lockout mechanism after failed attempts
+- [x] Create account lockout mechanism after failed attempts
 - [ ] Add IP-based suspicious activity detection
 - [ ] Implement session management and forced logout capabilities
 
 ### Security Enhancements
-- [ ] Implement HTTPS for all communications
-- [ ] Configure JWT with short expiration for access tokens
-- [ ] Implement input validation and sanitization
-- [ ] Add CSRF protection
-- [ ] Add rate limiting for authentication endpoints
+- [x] Implement HTTPS for all communications
+- [x] Configure JWT with short expiration for access tokens
+- [x] Implement input validation and sanitization
+- [x] Add CSRF protection
+- [x] Add rate limiting for authentication endpoints
 - [ ] Create regular security audit process
-- [ ] Implement data encryption at rest and in transit
-- [ ] Add proper environment configuration for development, staging, and production
-- [ ] Implement Content Security Policy (CSP)
-- [ ] Add security headers (X-XSS-Protection, X-Content-Type-Options, etc.)
+- [x] Implement data encryption at rest and in transit
+- [x] Add proper environment configuration for development, staging, and production
+- [x] Implement Content Security Policy (CSP)
+- [x] Add security headers (X-XSS-Protection, X-Content-Type-Options, etc.)
 - [ ] Create security incident response plan
 - [ ] Implement API key management for external integrations
 - [ ] Set up automated security scanning in CI/CD pipeline
@@ -844,9 +844,9 @@ This document tracks the development progress of the Church Planner application.
 - [ ] Fix authentication and server connection issues
 - [ ] Implement Services functionality
 - [ ] Replace mock data with database integration
-- [ ] **CRITICAL**: Replace localStorage token storage with HTTP-only cookies
-- [ ] **CRITICAL**: Implement CSRF protection for API endpoints
-- [ ] **CRITICAL**: Add rate limiting for authentication endpoints
+- [x] **CRITICAL**: Replace localStorage token storage with HTTP-only cookies
+- [x] **CRITICAL**: Implement CSRF protection for API endpoints
+- [x] **CRITICAL**: Add rate limiting for authentication endpoints
 - [ ] Implement comprehensive test suite
 - [ ] Enhance user experience with intuitive interactions
 - [ ] Improve accessibility compliance
