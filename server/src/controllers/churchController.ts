@@ -1,124 +1,93 @@
 import { Request, Response } from 'express';
-import Church from '../models/Church';
+import { IChurchDocument } from '@shared/types/mongoose';
+import { HttpStatus } from '@shared/types/api';
+import { sendSuccessResponse, sendErrorResponse, handleError } from '../utils/responseUtils';
+import churchService from '../services/churchService';
 
-// @desc    Get all churches
-// @route   GET /api/churches
-// @access  Public
+/**
+ * @desc    Get all churches
+ * @route   GET /api/churches
+ * @access  Public
+ */
 export const getChurches = async (req: Request, res: Response): Promise<void> => {
   try {
-    const churches = await Church.find();
-    res.status(200).json({
-      success: true,
-      count: churches.length,
-      data: churches,
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
+    const churches = await churchService.getAll();
+    sendSuccessResponse(res, churches, HttpStatus.OK, churches.length);
+  } catch (error) {
+    handleError(res, error);
   }
 };
 
-// @desc    Create new church
-// @route   POST /api/churches
-// @access  Private (Admin only)
+/**
+ * @desc    Create new church
+ * @route   POST /api/churches
+ * @access  Private (Admin only)
+ */
 export const createChurch = async (req: Request, res: Response): Promise<void> => {
   try {
-    const church = await Church.create(req.body);
-    
-    res.status(201).json({
-      success: true,
-      data: church,
-    });
-  } catch (error: any) {
-    res.status(400).json({
-      success: false,
-      error: error.message,
-    });
+    const church = await churchService.create(req.body);
+    sendSuccessResponse(res, church, HttpStatus.CREATED);
+  } catch (error) {
+    handleError(res, error);
   }
 };
 
-// @desc    Get single church
-// @route   GET /api/churches/:id
-// @access  Public
+/**
+ * @desc    Get single church
+ * @route   GET /api/churches/:id
+ * @access  Public
+ */
 export const getChurch = async (req: Request, res: Response): Promise<void> => {
   try {
-    const church = await Church.findById(req.params.id);
+    const church = await churchService.getById(req.params.id);
     
     if (!church) {
-      res.status(404).json({
-        success: false,
-        error: 'Church not found',
-      });
+      sendErrorResponse(res, 'Church not found', HttpStatus.NOT_FOUND);
       return;
     }
     
-    res.status(200).json({
-      success: true,
-      data: church,
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
+    sendSuccessResponse(res, church);
+  } catch (error) {
+    handleError(res, error);
   }
 };
 
-// @desc    Update church
-// @route   PUT /api/churches/:id
-// @access  Private (Admin only)
+/**
+ * @desc    Update church
+ * @route   PUT /api/churches/:id
+ * @access  Private (Admin only)
+ */
 export const updateChurch = async (req: Request, res: Response): Promise<void> => {
   try {
-    const church = await Church.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    const church = await churchService.update(req.params.id, req.body);
     
     if (!church) {
-      res.status(404).json({
-        success: false,
-        error: 'Church not found',
-      });
+      sendErrorResponse(res, 'Church not found', HttpStatus.NOT_FOUND);
       return;
     }
     
-    res.status(200).json({
-      success: true,
-      data: church,
-    });
-  } catch (error: any) {
-    res.status(400).json({
-      success: false,
-      error: error.message,
-    });
+    sendSuccessResponse(res, church);
+  } catch (error) {
+    handleError(res, error);
   }
 };
 
-// @desc    Delete church
-// @route   DELETE /api/churches/:id
-// @access  Private (Admin only)
+/**
+ * @desc    Delete church
+ * @route   DELETE /api/churches/:id
+ * @access  Private (Admin only)
+ */
 export const deleteChurch = async (req: Request, res: Response): Promise<void> => {
   try {
-    const church = await Church.findByIdAndDelete(req.params.id);
+    const church = await churchService.delete(req.params.id);
     
     if (!church) {
-      res.status(404).json({
-        success: false,
-        error: 'Church not found',
-      });
+      sendErrorResponse(res, 'Church not found', HttpStatus.NOT_FOUND);
       return;
     }
     
-    res.status(200).json({
-      success: true,
-      data: {},
-    });
-  } catch (error: any) {
-    res.status(400).json({
-      success: false,
-      error: error.message,
-    });
+    sendSuccessResponse(res, {}, HttpStatus.OK);
+  } catch (error) {
+    handleError(res, error);
   }
 }; 

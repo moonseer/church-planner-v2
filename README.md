@@ -10,6 +10,7 @@ A comprehensive church planning and management application built with React, Typ
 - Volunteer scheduling
 - Song library
 - Reporting and analytics
+- Comprehensive monitoring and observability
 
 ## Tech Stack
 
@@ -24,6 +25,13 @@ A comprehensive church planning and management application built with React, Typ
 - TypeScript
 - MongoDB with Mongoose
 - JWT for authentication
+
+### Monitoring & Observability
+- Prometheus for metrics collection
+- Grafana for metrics visualization
+- Loki for log aggregation
+- Promtail for log collection
+- Custom metrics for application performance monitoring
 
 ## Getting Started
 
@@ -496,3 +504,35 @@ For more details about the CI/CD pipeline, see [CI-CD.md](CI-CD.md).
 ## License
 
 [MIT](LICENSE)
+
+## Documentation
+
+- [API Documentation](docs/API.md)
+- [Environment Configuration](docs/ENVIRONMENTS.md)
+- [Docker Setup](docs/DOCKER.md)
+- [Code Quality](docs/CODE_QUALITY.md)
+- [Test Coverage](docs/TEST_COVERAGE.md)
+- [Error Tracking](docs/ERROR_TRACKING.md)
+- [Logging](docs/LOGGING.md)
+- [Monitoring](docs/MONITORING.md)
+
+## Monitoring
+
+The application includes a comprehensive monitoring and observability stack:
+
+### Metrics Collection
+
+- Server-side metrics using Prometheus
+- Client-side performance monitoring
+- Database operation tracking
+- Error tracking and monitoring
+
+### Monitoring Tools
+
+- **Prometheus**: http://localhost:9090 (when running with Docker)
+- **Grafana**: http://localhost:3000 (when running with Docker)
+  - Default credentials: admin/admin
+
+### Documentation
+
+For more details on the monitoring setup, see the [Monitoring Documentation](docs/MONITORING.md).

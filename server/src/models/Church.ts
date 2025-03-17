@@ -1,18 +1,7 @@
 import mongoose from 'mongoose';
+import { IChurchDocument, IChurchModel } from '@shared/types/mongoose';
 
-export interface IChurch extends mongoose.Document {
-  name: string;
-  address: string;
-  city: string;
-  state: string;
-  zip: string;
-  phone: string;
-  email: string;
-  website: string;
-  createdAt: Date;
-}
-
-const ChurchSchema = new mongoose.Schema({
+const ChurchSchema = new mongoose.Schema<IChurchDocument, IChurchModel>({
   name: {
     type: String,
     required: [true, 'Please add a church name'],
@@ -22,25 +11,27 @@ const ChurchSchema = new mongoose.Schema({
   },
   address: {
     type: String,
-    required: [true, 'Please add an address'],
+    required: false,
   },
   city: {
     type: String,
-    required: [true, 'Please add a city'],
+    required: false,
   },
   state: {
     type: String,
-    required: [true, 'Please add a state'],
+    required: false,
   },
   zip: {
     type: String,
-    required: [true, 'Please add a zip code'],
+    required: false,
   },
   phone: {
     type: String,
+    required: false,
   },
   email: {
     type: String,
+    required: false,
     match: [
       /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
       'Please add a valid email',
@@ -48,11 +39,16 @@ const ChurchSchema = new mongoose.Schema({
   },
   website: {
     type: String,
+    required: false,
   },
   createdAt: {
     type: Date,
     default: Date.now,
   },
+}, {
+  timestamps: true
 });
 
-export default mongoose.model<IChurch>('Church', ChurchSchema); 
+const Church = mongoose.model<IChurchDocument, IChurchModel>('Church', ChurchSchema);
+
+export default Church; 

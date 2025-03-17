@@ -1,0 +1,13 @@
+apiVersion: 1
+
+providers:
+  - name: 'Church Planner'
+    orgId: 1
+    folder: 'Church Planner Dashboards'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/json
+      foldersFromFilesStructure: true 

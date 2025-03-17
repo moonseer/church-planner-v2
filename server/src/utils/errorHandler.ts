@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as Sentry from '@sentry/node';
 import { logger } from './logger';
+import { errorsTotal } from './metrics';
 
 // Initialize Sentry if DSN is provided
 if (process.env.SENTRY_DSN) {
@@ -40,6 +41,9 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
+  // Track error in Prometheus metrics
+  errorsTotal.inc({ type: err.name || 'UnknownError' });
+  
   // Log error
   if (err.isOperational) {
     logger.warn(`Operational error: ${err.message}`);
@@ -55,6 +59,14 @@ export const errorHandler = (
   // Set default values
   err.statusCode = err.statusCode || 500;
   const status = err.statusCode >= 400 && err.statusCode < 500 ? 'fail' : 'error';
+
+  // Log the error
+  logger.error(`[${err.name || 'Error'}] ${err.message}`, {
+    stack: err.stack,
+    statusCode: err.statusCode,
+    path: req.path,
+    method: req.method,
+  });
 
   // Send response
   res.status(err.statusCode).json({

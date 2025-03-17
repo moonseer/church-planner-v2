@@ -1,19 +1,19 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { UserRole, JwtPayload } from '@shared/types/auth';
+import { IUserDocument, IUserModel } from '@shared/types/mongoose';
 
-export interface IUser extends mongoose.Document {
-  name: string;
-  email: string;
-  password: string;
-  role: string;
-  church: mongoose.Types.ObjectId;
-  createdAt: Date;
+// Add methods to the user document
+export interface IUserMethods {
   matchPassword(enteredPassword: string): Promise<boolean>;
   getSignedJwtToken(): string;
 }
 
-const UserSchema = new mongoose.Schema({
+// Combine document with its methods
+type UserDocument = IUserDocument & IUserMethods;
+
+const UserSchema = new mongoose.Schema<UserDocument, IUserModel>({
   name: {
     type: String,
     required: [true, 'Please add a name'],
@@ -35,18 +35,20 @@ const UserSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin'],
-    default: 'user',
+    enum: Object.values(UserRole),
+    default: UserRole.USER,
   },
   church: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Church',
-    required: true,
+    required: false,
   },
   createdAt: {
     type: Date,
     default: Date.now,
   },
+}, {
+  timestamps: true
 });
 
 // Encrypt password using bcrypt
@@ -63,9 +65,11 @@ UserSchema.pre('save', async function (next) {
 
 // Sign JWT and return
 UserSchema.methods.getSignedJwtToken = function () {
-  // Using a type assertion to bypass TypeScript's strict checking for JWT
+  const jwtSecret = process.env.JWT_SECRET || 'defaultsecret';
+  const payload = { id: this._id.toString() };
+  
   // @ts-ignore - Ignoring TypeScript error for JWT sign
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET || 'defaultsecret', {
+  return jwt.sign(payload, jwtSecret, {
     expiresIn: process.env.JWT_EXPIRE || '30d',
   });
 };
@@ -75,4 +79,6 @@ UserSchema.methods.matchPassword = async function (enteredPassword: string) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-export default mongoose.model<IUser>('User', UserSchema); 
+const User = mongoose.model<UserDocument, IUserModel>('User', UserSchema);
+
+export default User; 

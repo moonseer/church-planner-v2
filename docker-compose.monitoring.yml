@@ -16,7 +16,7 @@ services:
       - '--web.console.templates=/usr/share/prometheus/consoles'
     networks:
       - monitoring-network
-      - church-planner-network
+      - church-planner-v2_church-planner-network
 
   # Grafana - Visualization
   grafana:
@@ -24,6 +24,7 @@ services:
     container_name: church-planner-grafana
     volumes:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards/json:/etc/grafana/provisioning/dashboards/json
       - grafana_data:/var/lib/grafana
     ports:
       - "3030:3000"  # Using 3030 to avoid conflict with client
@@ -37,7 +38,7 @@ services:
       - loki
     networks:
       - monitoring-network
-      - church-planner-network
+      - church-planner-v2_church-planner-network
 
   # Loki - Log Aggregation
   loki:
@@ -80,7 +81,7 @@ services:
     restart: always
     networks:
       - monitoring-network
-      - church-planner-network
+      - church-planner-v2_church-planner-network
 
   # Node Exporter - Host Metrics
   node-exporter:
@@ -103,7 +104,7 @@ services:
 networks:
   monitoring-network:
     driver: bridge
-  church-planner-network:
+  church-planner-v2_church-planner-network:
     external: true
 
 volumes:

@@ -1,197 +1,176 @@
-import { Request, Response } from 'express';
-import User from '../models/User';
-import Church from '../models/Church';
 import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import { 
+  ILoginRequest, 
+  IRegisterRequest, 
+  ILoginResponse, 
+  IRegisterResponse, 
+  IUserResponse,
+  IUserWithChurch,
+  UserRole,
+  JwtPayload,
+  IChurchInfo
+} from '@shared/types/auth';
+import { IUserDocument, IChurchDocument } from '@shared/types/mongoose';
+import { ApiResponsePromise, HttpStatus } from '@shared/types/api';
+import { sendSuccessResponse, sendErrorResponse, handleError } from '../utils/responseUtils';
+import { Request, Response } from 'express';
+import { userService, churchService } from '../services';
 
-// @desc    Register user
-// @route   POST /api/auth/register
-// @access  Public
-export const register = async (req: Request, res: Response): Promise<void> => {
+/**
+ * Generate JWT token
+ */
+const generateToken = (id: string): string => {
+  const jwtSecret = process.env.JWT_SECRET || 'defaultsecret';
+  const payload = { id };
+  
+  // @ts-ignore - Ignoring TypeScript error for JWT sign
+  return jwt.sign(payload, jwtSecret, {
+    expiresIn: '30d',
+  });
+};
+
+/**
+ * Format user data for response
+ */
+const formatUserResponse = (
+  user: IUserDocument & { _id: mongoose.Types.ObjectId }, 
+  church?: IChurchDocument & { _id: mongoose.Types.ObjectId } | null
+): IUserWithChurch => {
+  return {
+    id: user._id.toString(),
+    name: user.name,
+    email: user.email,
+    role: user.role as UserRole,
+    church: church ? {
+      id: church._id.toString(),
+      name: church.name,
+    } : null,
+  };
+};
+
+/**
+ * @desc    Register a new user
+ * @route   POST /api/auth/register
+ * @access  Public
+ */
+export const register = async (req: Request<{}, {}, IRegisterRequest>, res: Response): Promise<void> => {
   try {
-    const { name, email, password, role, churchName, churchAddress, churchCity, churchState, churchZip } = req.body;
+    const { name, email, password, churchName } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      res.status(400).json({
-        success: false,
-        error: 'User already exists with that email',
-      });
-      return;
+    // Check if user exists
+    const userExists = await userService.findByEmail(email);
+
+    if (userExists) {
+      return sendErrorResponse(res, 'User already exists', HttpStatus.BAD_REQUEST);
     }
 
-    // Create or find church
+    // Create church or find existing one
     let church;
+
     if (churchName) {
-      // Check if church exists
-      church = await Church.findOne({ name: churchName });
-      
-      // If church doesn't exist, create it
-      if (!church) {
-        church = await Church.create({
-          name: churchName,
-          address: churchAddress || '',
-          city: churchCity || '',
-          state: churchState || '',
-          zip: churchZip || '',
-        });
+      const existingChurch = await churchService.findChurchesByName(churchName);
+
+      if (existingChurch.length > 0) {
+        church = existingChurch[0];
+      } else {
+        church = await churchService.create({ name: churchName });
       }
-    } else {
-      res.status(400).json({
-        success: false,
-        error: 'Church name is required',
-      });
-      return;
     }
 
     // Create user
-    const user = await User.create({
-      name,
-      email,
-      password,
-      role: role || 'user', // Allow setting role during registration
-      church: church._id,
-    });
-
-    // Generate JWT token
-    const token = user.getSignedJwtToken();
-
-    res.status(201).json({
-      success: true,
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        church: {
-          id: church._id,
-          name: church.name,
-        },
+    const user = await userService.createUser(
+      {
+        name,
+        email,
+        password,
+        role: church ? UserRole.ADMIN : UserRole.USER,
       },
-    });
-  } catch (error: any) {
-    res.status(400).json({
-      success: false,
-      error: error.message,
-    });
+      church?._id.toString()
+    );
+
+    if (user) {
+      // Format user data for response
+      const userData = formatUserResponse(user, church);
+
+      const responseData: IRegisterResponse = {
+        user: userData,
+        token: generateToken(user._id.toString()),
+      };
+
+      return sendSuccessResponse(res, responseData, HttpStatus.CREATED);
+    } else {
+      return sendErrorResponse(res, 'Invalid user data', HttpStatus.BAD_REQUEST);
+    }
+  } catch (error) {
+    handleError(res, error);
   }
 };
 
-// @desc    Login user
-// @route   POST /api/auth/login
-// @access  Public
-export const login = async (req: Request, res: Response): Promise<void> => {
+/**
+ * @desc    Authenticate a user
+ * @route   POST /api/auth/login
+ * @access  Public
+ */
+export const login = async (req: Request<{}, {}, ILoginRequest>, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
 
-    // Validate email & password
-    if (!email || !password) {
-      res.status(400).json({
-        success: false,
-        error: 'Please provide an email and password',
-      });
-      return;
-    }
+    // Check for user email
+    const user = await userService.findByEmail(email);
 
-    // Check for user
-    const user = await User.findOne({ email }).select('+password');
     if (!user) {
-      res.status(401).json({
-        success: false,
-        error: 'Invalid credentials',
-      });
-      return;
+      return sendErrorResponse(res, 'Invalid credentials', HttpStatus.UNAUTHORIZED);
     }
 
-    // Check if password matches
-    const isMatch = await user.matchPassword(password);
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.password);
+
     if (!isMatch) {
-      res.status(401).json({
-        success: false,
-        error: 'Invalid credentials',
-      });
-      return;
+      return sendErrorResponse(res, 'Invalid credentials', HttpStatus.UNAUTHORIZED);
     }
 
-    // Get church info
-    const church = await Church.findById(user.church);
-    if (!church) {
-      res.status(404).json({
-        success: false,
-        error: 'Church not found',
-      });
-      return;
+    // Get user with church data
+    const userWithChurch = await userService.findUserWithChurch(user._id.toString());
+    
+    if (!userWithChurch) {
+      return sendErrorResponse(res, 'User data could not be retrieved', HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    // Generate JWT token
-    const token = user.getSignedJwtToken();
+    // Format user data for response
+    const userData = formatUserResponse(userWithChurch, userWithChurch.church as any);
 
-    res.status(200).json({
-      success: true,
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        church: {
-          id: church._id,
-          name: church.name,
-        },
-      },
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
+    const responseData: ILoginResponse = {
+      user: userData,
+      token: generateToken(user._id.toString()),
+    };
+
+    return sendSuccessResponse(res, responseData);
+  } catch (error) {
+    handleError(res, error);
   }
 };
 
-// @desc    Get current logged in user
-// @route   GET /api/auth/me
-// @access  Private
+/**
+ * @desc    Get current user
+ * @route   GET /api/auth/me
+ * @access  Private
+ */
 export const getCurrentUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    // req.user is set by the auth middleware
-    const user = await User.findById((req as any).user.id);
-    
+    // req.user is set in the auth middleware
+    const user = await userService.findUserWithChurch((req as any).user.id);
+
     if (!user) {
-      res.status(404).json({
-        success: false,
-        error: 'User not found',
-      });
-      return;
+      return sendErrorResponse(res, 'User not found', HttpStatus.NOT_FOUND);
     }
 
-    // Get church info
-    const church = await Church.findById(user.church);
-    if (!church) {
-      res.status(404).json({
-        success: false,
-        error: 'Church not found',
-      });
-      return;
-    }
+    // Format user data for response
+    const userData = formatUserResponse(user, user.church as any);
 
-    res.status(200).json({
-      success: true,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        church: {
-          id: church._id,
-          name: church.name,
-        },
-      },
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
+    return sendSuccessResponse<IUserResponse>(res, { user: userData });
+  } catch (error) {
+    handleError(res, error);
   }
 }; 

@@ -1,12 +1,21 @@
 import { Request, Response } from 'express';
 import { register, login, getCurrentUser } from '../controllers/authController';
 import mongoose from 'mongoose';
+import { 
+  ILoginRequest, 
+  IRegisterRequest, 
+  UserRole,
+  JwtPayload
+} from '@shared/types/auth';
+import { IUserDocument, IChurchDocument } from '@shared/types/mongoose';
+import { isUserDocument, isChurchDocument } from '../utils/typeGuards';
+import { Result } from '@shared/types/utility';
 
-// Extended Request type to include user property
+// Use more specific types for the RequestWithUser interface
 interface RequestWithUser extends Request {
   user?: {
     id: string;
-    [key: string]: any;
+    church?: string;
   };
 }
 
@@ -48,11 +57,47 @@ describe('Auth Controller', () => {
       status: jest.fn().mockReturnThis(),
       json: jest.fn().mockReturnThis(),
     };
-  });
-
-  afterEach(() => {
+    
+    // Reset all mocks before each test
     jest.clearAllMocks();
   });
+
+  // Test helpers using type guards
+  const createMockUser = (overrides: Partial<IUserDocument> = {}): IUserDocument => {
+    return {
+      _id: new mongoose.Types.ObjectId(),
+      name: 'Test User',
+      email: 'test@example.com',
+      password: 'hashedpassword123',
+      role: UserRole.USER,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ...overrides
+    };
+  };
+
+  const createMockChurch = (overrides: Partial<IChurchDocument> = {}): IChurchDocument => {
+    return {
+      _id: new mongoose.Types.ObjectId(),
+      name: 'Test Church',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ...overrides
+    };
+  };
+
+  // Type-safe assertion helpers
+  const assertIsUserDocument = (value: unknown): asserts value is IUserDocument => {
+    if (!isUserDocument(value)) {
+      throw new Error(`Expected user document but got: ${JSON.stringify(value)}`);
+    }
+  };
+
+  const assertIsChurchDocument = (value: unknown): asserts value is IChurchDocument => {
+    if (!isChurchDocument(value)) {
+      throw new Error(`Expected church document but got: ${JSON.stringify(value)}`);
+    }
+  };
 
   describe('register', () => {
     it('should register a new user with a new church', async () => {

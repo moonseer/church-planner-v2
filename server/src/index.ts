@@ -12,11 +12,14 @@ import eventRoutes from './routes/eventRoutes';
 import teamRoutes from './routes/teamRoutes';
 import teamMemberRoutes from './routes/teamMemberRoutes';
 import serviceRoutes from './routes/serviceRoutes';
+import metricsRoutes from './routes/metrics';
 
 // Import logging and error handling
 import morgan from 'morgan';
 import { logger, stream } from './utils/logger';
 import { errorHandler, setupUnhandledRejections } from './utils/errorHandler';
+import { metricsMiddleware, metricsEndpoint } from './utils/metrics';
+import { setupDbMonitoring } from './utils/dbMonitoring';
 
 // Load environment variables
 dotenv.config();
@@ -31,6 +34,9 @@ app.use(express.json());
 // Setup request logging
 app.use(morgan('combined', { stream }));
 
+// Add metrics middleware
+app.use(metricsMiddleware);
+
 // Mount routes
 app.use('/api/churches', churchRoutes);
 app.use('/api/auth', authRoutes);
@@ -40,6 +46,10 @@ app.use('/api/teams', teamRoutes);
 app.use('/api/team-members', teamMemberRoutes);
 app.use('/api/teams/:teamId/members', teamMemberRoutes);
 app.use('/api/services', serviceRoutes);
+app.use('/api/metrics', metricsRoutes);
+
+// Add metrics endpoint
+app.get('/metrics', metricsEndpoint);
 
 // Basic route
 app.get('/', (req, res) => {
@@ -60,6 +70,9 @@ const connectDB = async () => {
     process.exit(1);
   }
 };
+
+// Initialize database monitoring
+setupDbMonitoring();
 
 // Setup global error handler (should be after all routes)
 app.use(errorHandler);

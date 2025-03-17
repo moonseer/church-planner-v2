@@ -1,81 +1,113 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
+import {
+  AuthenticatedRequest,
+  JwtPayload,
+  UserRole
+} from '@shared/types/auth';
+import { HttpStatus } from '@shared/types/api';
+import { sendErrorResponse } from '../utils/responseUtils';
 
-// Interface for decoded JWT token
-interface DecodedToken {
-  id: string;
-  iat: number;
-  exp: number;
-}
-
-// Extend Express Request interface to include user
+// Define a custom interface for the request with user
 declare global {
   namespace Express {
     interface Request {
-      user?: any;
+      user?: {
+        id: string;
+        church?: string;
+      };
     }
   }
 }
 
-// Protect routes
-export const protect = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  let token;
-
-  // Check if token exists in Authorization header
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    // Set token from Bearer token in header
-    token = req.headers.authorization.split(' ')[1];
-  }
-  // Check if token exists in cookies (for future implementation)
-  // else if (req.cookies.token) {
-  //   token = req.cookies.token;
-  // }
-
-  // Make sure token exists
-  if (!token) {
-    res.status(401).json({
-      success: false,
-      error: 'Not authorized to access this route',
-    });
-    return;
-  }
-
+/**
+ * Middleware to protect routes that require authentication
+ */
+export const protect = async (
+  req: Request, 
+  res: Response, 
+  next: NextFunction
+): Promise<void> => {
   try {
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as DecodedToken;
+    let token;
 
-    // Set user in request
-    req.user = await User.findById(decoded.id);
+    // Check for token in Authorization header
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer')
+    ) {
+      // Get token from header
+      token = req.headers.authorization.split(' ')[1];
+    }
 
-    next();
+    // Make sure token exists
+    if (!token) {
+      sendErrorResponse(res, 'Not authorized to access this route', HttpStatus.UNAUTHORIZED);
+      return;
+    }
+
+    try {
+      // Verify token
+      const jwtSecret = process.env.JWT_SECRET || 'defaultsecret';
+      const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
+
+      // Get user from the token
+      const user = await User.findById(decoded.id).select('-password');
+
+      if (!user) {
+        sendErrorResponse(res, 'User not found', HttpStatus.UNAUTHORIZED);
+        return;
+      }
+
+      // Add user to request
+      req.user = {
+        id: user._id.toString(),
+        church: user.church ? user.church.toString() : undefined
+      };
+
+      next();
+    } catch (error) {
+      sendErrorResponse(res, 'Not authorized to access this route', HttpStatus.UNAUTHORIZED);
+      return;
+    }
   } catch (error) {
-    res.status(401).json({
-      success: false,
-      error: 'Not authorized to access this route',
-    });
+    sendErrorResponse(res, 'Server error', HttpStatus.INTERNAL_SERVER_ERROR);
   }
 };
 
-// Grant access to specific roles
-export const authorize = (...roles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    if (!req.user) {
-      res.status(401).json({
-        success: false,
-        error: 'Not authorized to access this route',
-      });
-      return;
-    }
+/**
+ * Middleware to authorize specific user roles
+ * @param roles Array of roles authorized to access the route
+ */
+export const authorize = (roles: UserRole[]) => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user) {
+        sendErrorResponse(res, 'Not authorized', HttpStatus.UNAUTHORIZED);
+        return;
+      }
+      
+      const user = await User.findById(req.user.id);
 
-    if (!roles.includes(req.user.role)) {
-      res.status(403).json({
-        success: false,
-        error: `User role ${req.user.role} is not authorized to access this route`,
-      });
-      return;
-    }
+      if (!user) {
+        sendErrorResponse(res, 'User not found', HttpStatus.NOT_FOUND);
+        return;
+      }
 
-    next();
+      // Check if the user's role is included in the authorized roles
+      if (!roles.includes(user.role as UserRole)) {
+        sendErrorResponse(
+          res, 
+          `User role ${user.role} is not authorized to access this route`,
+          HttpStatus.FORBIDDEN
+        );
+        return;
+      }
+
+      next();
+    } catch (error) {
+      sendErrorResponse(res, 'Server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   };
 }; 
