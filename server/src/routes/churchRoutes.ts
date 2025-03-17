@@ -7,6 +7,7 @@ import {
   deleteChurch 
 } from '../controllers/churchController';
 import { protect, authorize } from '../middleware/auth';
+import { UserRole } from '@shared/types/auth';
 
 const router = express.Router();
 
@@ -134,12 +135,14 @@ const router = express.Router();
  *         description: Server error
  */
 
-// @desc    Get all churches & Create new church
-// @route   GET /api/churches & POST /api/churches
-// @access  Public (GET) & Private/Admin (POST)
+/**
+ * @route GET /api/churches
+ * @desc Get all churches
+ * @access Public
+ */
 router.route('/')
   .get(getChurches)
-  .post(protect, authorize('admin'), createChurch);
+  .post(protect, authorize([UserRole.ADMIN]), createChurch);
 
 /**
  * @swagger
@@ -248,12 +251,22 @@ router.route('/')
  *         description: Server error
  */
 
-// @desc    Get single church, Update church, Delete church
-// @route   GET, PUT, DELETE /api/churches/:id
-// @access  Public (GET) & Private/Admin (PUT, DELETE)
+/**
+ * @route GET /api/churches/:id
+ * @desc Get church by ID
+ * @access Public
+ * 
+ * @route PUT /api/churches/:id
+ * @desc Update church
+ * @access Private - Admin only
+ * 
+ * @route DELETE /api/churches/:id
+ * @desc Delete church
+ * @access Private - Admin only
+ */
 router.route('/:id')
   .get(getChurch)
-  .put(protect, authorize('admin'), updateChurch)
-  .delete(protect, authorize('admin'), deleteChurch);
+  .put(protect, authorize([UserRole.ADMIN]), updateChurch)
+  .delete(protect, authorize([UserRole.ADMIN]), deleteChurch);
 
 export default router; 

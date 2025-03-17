@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { getServices, getService, createService, updateService, deleteService } from '../controllers/serviceController';
 import mongoose from 'mongoose';
+import { IServiceDocument } from '@shared/types/mongoose';
 
 // Extended Request type to include user property
 interface RequestWithUser extends Request {
@@ -149,7 +150,7 @@ describe('Service Controller', () => {
       };
 
       // Setup mock services (doesn't matter for this test)
-      const mockServices = [];
+      const mockServices: IServiceDocument[] = [];
 
       // Mock Service.find chain
       const mockFind = Service.find as jest.Mock;

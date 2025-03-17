@@ -1,28 +1,17 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "target": "es2016",
+    "module": "commonjs",
+    "outDir": "./dist",
     "esModuleInterop": true,
     "strict": true,
-    "outDir": "./dist",
-    "rootDirs": ["./src", "../shared"],
-    "baseUrl": "./",
+    "baseUrl": ".",
     "paths": {
       "@shared/*": ["../shared/*"]
     },
-    "sourceMap": true,
-    "resolveJsonModule": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": true,
-    "strictFunctionTypes": true,
-    "strictNullChecks": true,
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "typeRoots": ["./node_modules/@types", "./src/types"]
+    "noImplicitAny": true
   },
   "include": ["src/**/*", "../shared/**/*"],
-  "exclude": ["node_modules", "**/*.test.ts"]
+  "exclude": ["node_modules"]
 } 

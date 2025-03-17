@@ -6,6 +6,23 @@ import Event from '../models/Event';
 import mongoose from 'mongoose';
 import { toObjectId } from '../utils/typeGuards';
 
+// Helper function to adapt Mongoose documents to IEventDocument interface
+const adaptToEventDocument = (doc: any): IEventDocument => {
+  return {
+    _id: doc._id,
+    title: doc.title,
+    description: doc.description || '',
+    start: doc.start,
+    end: doc.end,
+    allDay: doc.allDay,
+    location: doc.location || '',
+    eventType: doc.eventType,
+    church: doc.church,
+    createdAt: doc.createdAt,
+    updatedAt: doc.updatedAt || doc.createdAt // Use createdAt as fallback if updatedAt is missing
+  };
+};
+
 /**
  * Get all events
  * @route GET /api/events
@@ -41,10 +58,13 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
       .sort({ startDate: 1 })
       .populate('eventType');
 
+    // Adapt the documents to match IEventDocument interface
+    const adaptedEvents = events.map(adaptToEventDocument);
+
     const response: ApiSuccessResponse<IEventDocument[]> = {
       success: true,
-      data: events,
-      count: events.length
+      data: adaptedEvents,
+      count: adaptedEvents.length
     };
 
     res.status(HttpStatus.OK).json(response);
@@ -95,9 +115,12 @@ export const getEvent = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // Adapt to IEventDocument
+    const adaptedEvent = adaptToEventDocument(event);
+
     const response: ApiSuccessResponse<IEventDocument> = {
       success: true,
-      data: event
+      data: adaptedEvent
     };
 
     res.status(HttpStatus.OK).json(response);
@@ -158,9 +181,12 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
     // Create the event
     const newEvent = await Event.create(eventData);
     
+    // Adapt to IEventDocument
+    const adaptedEvent = adaptToEventDocument(newEvent);
+    
     const response: ApiSuccessResponse<IEventDocument> = {
       success: true,
-      data: newEvent
+      data: adaptedEvent
     };
 
     res.status(HttpStatus.CREATED).json(response);
@@ -237,9 +263,12 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
+    // Adapt to IEventDocument
+    const adaptedEvent = adaptToEventDocument(updatedEvent);
+
     const response: ApiSuccessResponse<IEventDocument> = {
       success: true,
-      data: updatedEvent
+      data: adaptedEvent
     };
 
     res.status(HttpStatus.OK).json(response);

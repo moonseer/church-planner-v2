@@ -857,6 +857,7 @@ This document tracks the development progress of the Church Planner application.
 - [ ] Implement application optimization recommendations
 - [x] Set up Swagger/OpenAPI for API documentation
 - [x] Document all API endpoints with Swagger
+- [ ] **BUG**: Fix Swagger documentation UI not loading at /api/docs endpoint
 - [x] Set up automated code quality checks
 - [x] Configure API validation testing
 - [x] Implement test coverage reporting

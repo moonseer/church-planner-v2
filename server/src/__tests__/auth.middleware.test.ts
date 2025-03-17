@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { protect, authorize } from '../middleware/auth';
+import { UserRole } from '@shared/types/auth';
 
 // Mock dependencies
 jest.mock('jsonwebtoken');
@@ -95,14 +96,24 @@ describe('Auth Middleware', () => {
       (jwt.verify as jest.Mock).mockReturnValue(mockDecodedToken);
       
       // Mock user retrieval
-      const mockUser = { _id: 'user123', name: 'Test User', role: 'admin' };
-      (User.findById as jest.Mock).mockResolvedValue(mockUser);
+      const mockUser = { 
+        _id: 'user123', 
+        name: 'Test User', 
+        role: UserRole.ADMIN,
+        church: 'church123'
+      };
+      (User.findById as jest.Mock).mockImplementation(() => ({
+        select: jest.fn().mockResolvedValue(mockUser)
+      }));
       
       await protect(req as Request, res as Response, next);
       
-      expect(jwt.verify).toHaveBeenCalledWith('validtoken', process.env.JWT_SECRET);
+      expect(jwt.verify).toHaveBeenCalledWith('validtoken', process.env.JWT_SECRET || 'defaultsecret');
       expect(User.findById).toHaveBeenCalledWith('user123');
-      expect(req.user).toEqual(mockUser);
+      expect(req.user).toEqual({
+        id: 'user123',
+        church: 'church123'
+      });
       expect(next).toHaveBeenCalled();
       expect(res.status).not.toHaveBeenCalled();
       expect(res.json).not.toHaveBeenCalled();
@@ -119,87 +130,116 @@ describe('Auth Middleware', () => {
       (jwt.verify as jest.Mock).mockReturnValue(mockDecodedToken);
       
       // Mock user not found
-      (User.findById as jest.Mock).mockResolvedValue(null);
+      (User.findById as jest.Mock).mockImplementation(() => ({
+        select: jest.fn().mockResolvedValue(null)
+      }));
       
       await protect(req as Request, res as Response, next);
       
-      expect(jwt.verify).toHaveBeenCalledWith('validtoken', process.env.JWT_SECRET);
+      expect(jwt.verify).toHaveBeenCalledWith('validtoken', process.env.JWT_SECRET || 'defaultsecret');
       expect(User.findById).toHaveBeenCalledWith('nonexistentuser');
-      expect(req.user).toBeNull();
-      expect(next).toHaveBeenCalled(); // Next is still called, but user will be null
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'User not found'
+      });
+      expect(next).not.toHaveBeenCalled();
     });
   });
   
   describe('authorize middleware', () => {
-    it('should return 401 if req.user is not set', () => {
+    it('should return 401 if req.user is not set', async () => {
       // No user set (req.user is undefined)
       req.user = undefined;
       
       // Create authorize middleware for admin role
-      const authMiddleware = authorize('admin');
+      const authMiddleware = authorize([UserRole.ADMIN]);
       
-      authMiddleware(req as Request, res as Response, next);
+      await authMiddleware(req as Request, res as Response, next);
       
       expect(res.status).toHaveBeenCalledWith(401);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: 'Not authorized to access this route'
+        error: 'Not authorized'
       });
       expect(next).not.toHaveBeenCalled();
     });
     
-    it('should return 403 if user role is not authorized', () => {
+    it('should return 403 if user role is not authorized', async () => {
       // Set user with non-authorized role
       req.user = { 
-        _id: 'user123', 
-        name: 'Test User', 
-        role: 'user' 
+        id: 'user123',
+        church: 'church123'
       };
       
-      // Create authorize middleware for admin role
-      const authMiddleware = authorize('admin');
+      // Mock user retrieval
+      const mockUser = {
+        _id: 'user123',
+        role: UserRole.USER
+      };
+      (User.findById as jest.Mock).mockResolvedValue(mockUser);
       
-      authMiddleware(req as Request, res as Response, next);
+      // Create authorize middleware for admin role
+      const authMiddleware = authorize([UserRole.ADMIN]);
+      
+      await authMiddleware(req as Request, res as Response, next);
       
       expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: 'User role user is not authorized to access this route'
+        error: `User role ${UserRole.USER} is not authorized to access this route`
       });
       expect(next).not.toHaveBeenCalled();
     });
     
-    it('should call next() if user role is authorized', () => {
+    it('should call next() if user role is authorized', async () => {
       // Set user with authorized role
       req.user = { 
-        _id: 'user123', 
-        name: 'Test User', 
-        role: 'admin' 
+        id: 'user123',
+        church: 'church123'
       };
       
+      // Mock user retrieval
+      const mockUser = {
+        _id: 'user123',
+        role: UserRole.ADMIN
+      };
+      (User.findById as jest.Mock).mockResolvedValue(mockUser);
+      
       // Create authorize middleware for admin role
-      const authMiddleware = authorize('admin');
+      const authMiddleware = authorize([UserRole.ADMIN]);
       
-      authMiddleware(req as Request, res as Response, next);
+      await authMiddleware(req as Request, res as Response, next);
       
+      expect(User.findById).toHaveBeenCalledWith('user123');
       expect(next).toHaveBeenCalled();
       expect(res.status).not.toHaveBeenCalled();
       expect(res.json).not.toHaveBeenCalled();
     });
     
-    it('should call next() if user role is one of multiple authorized roles', () => {
+    it('should call next() if user role is one of multiple authorized roles', async () => {
       // Set user with one of the authorized roles
       req.user = { 
-        _id: 'user123', 
-        name: 'Test User', 
-        role: 'editor' 
+        id: 'user123',
+        church: 'church123'
       };
       
+      // Create a mock editor role
+      const EDITOR_ROLE = 'editor' as UserRole;
+      
+      // Mock user retrieval
+      const mockUser = {
+        _id: 'user123',
+        role: EDITOR_ROLE
+      };
+      (User.findById as jest.Mock).mockResolvedValue(mockUser);
+      
       // Create authorize middleware with multiple roles
-      const authMiddleware = authorize('admin', 'editor', 'moderator');
+      const authMiddleware = authorize([UserRole.ADMIN, EDITOR_ROLE, 'moderator' as UserRole]);
       
-      authMiddleware(req as Request, res as Response, next);
+      await authMiddleware(req as Request, res as Response, next);
       
+      expect(User.findById).toHaveBeenCalledWith('user123');
       expect(next).toHaveBeenCalled();
       expect(res.status).not.toHaveBeenCalled();
       expect(res.json).not.toHaveBeenCalled();
