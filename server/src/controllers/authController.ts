@@ -15,8 +15,13 @@ import {
 import { IUserDocument, IChurchDocument } from '@shared/types/mongoose';
 import { ApiResponsePromise, HttpStatus } from '@shared/types/api';
 import { sendSuccessResponse, sendErrorResponse, handleError } from '../utils/responseUtils';
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { userService, churchService } from '../services';
+import crypto from 'crypto';
+import User, { IUser } from '../models/User';
+import { JWT_COOKIE_EXPIRE } from '../config/auth';
+import ErrorResponse from '../utils/ErrorResponse';
+import nodemailer from 'nodemailer';
 
 // Cookie options for JWT token
 const cookieOptions = {
@@ -69,13 +74,47 @@ const formatUserResponse = (
 };
 
 /**
+ * Send email using nodemailer
+ */
+const sendEmail = async (options: {
+  email: string;
+  subject: string;
+  message: string;
+  html?: string;
+}): Promise<void> => {
+  // Create a transporter
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.mailtrap.io',
+    port: parseInt(process.env.SMTP_PORT || '2525', 10),
+    auth: {
+      user: process.env.SMTP_USER || '',
+      pass: process.env.SMTP_PASSWORD || '',
+    },
+  });
+
+  // Define email options
+  const message = {
+    from: `${process.env.FROM_NAME || 'Church Planner'} <${
+      process.env.FROM_EMAIL || 'noreply@churchplanner.com'
+    }>`,
+    to: options.email,
+    subject: options.subject,
+    text: options.message,
+    html: options.html,
+  };
+
+  // Send email
+  await transporter.sendMail(message);
+};
+
+/**
  * @desc    Register a new user
  * @route   POST /api/auth/register
  * @access  Public
  */
-export const register = async (req: Request<{}, {}, IRegisterRequest>, res: Response): Promise<void> => {
+export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { name, email, password, churchName } = req.body;
+    const { firstName, lastName, email, password } = req.body;
 
     // Check if user exists
     const userExists = await userService.findByEmail(email);
@@ -84,33 +123,24 @@ export const register = async (req: Request<{}, {}, IRegisterRequest>, res: Resp
       return sendErrorResponse(res, 'User already exists', HttpStatus.BAD_REQUEST);
     }
 
-    // Create church or find existing one
-    let church;
-
-    if (churchName) {
-      const existingChurch = await churchService.findChurchesByName(churchName);
-
-      if (existingChurch.length > 0) {
-        church = existingChurch[0];
-      } else {
-        church = await churchService.create({ name: churchName });
-      }
-    }
-
     // Create user
     const user = await userService.createUser(
       {
-        name,
+        firstName,
+        lastName,
         email,
         password,
-        role: church ? UserRole.ADMIN : UserRole.USER,
+        role: 'user',
+        churches: [],
+        isActive: true,
+        loginAttempts: 0
       },
-      church?._id.toString()
+      null
     );
 
     if (user) {
       // Format user data for response
-      const userData = formatUserResponse(user, church);
+      const userData = formatUserResponse(user, null);
       
       // Generate JWT token
       const token = generateToken(user._id.toString());
@@ -128,7 +158,7 @@ export const register = async (req: Request<{}, {}, IRegisterRequest>, res: Resp
       return sendErrorResponse(res, 'Invalid user data', HttpStatus.BAD_REQUEST);
     }
   } catch (error) {
-    handleError(res, error);
+    next(error);
   }
 };
 
@@ -137,7 +167,7 @@ export const register = async (req: Request<{}, {}, IRegisterRequest>, res: Resp
  * @route   POST /api/auth/login
  * @access  Public
  */
-export const login = async (req: Request<{}, {}, ILoginRequest>, res: Response): Promise<void> => {
+export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { email, password } = req.body;
 
@@ -206,7 +236,7 @@ export const login = async (req: Request<{}, {}, ILoginRequest>, res: Response):
 
     return sendSuccessResponse(res, responseData);
   } catch (error) {
-    handleError(res, error);
+    next(error);
   }
 };
 
@@ -245,5 +275,225 @@ export const getCurrentUser = async (req: Request, res: Response): Promise<void>
     return sendSuccessResponse<IUserResponse>(res, { user: userData });
   } catch (error) {
     handleError(res, error);
+  }
+};
+
+// @desc    Update user details
+// @route   PUT /api/auth/updatedetails
+// @access  Private
+export const updateDetails = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Ensure user is authenticated
+    if (!req.user || !req.user.id) {
+      return next(
+        new ErrorResponse('User authentication required', 401)
+      );
+    }
+
+    const fieldsToUpdate = {
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      email: req.body.email,
+    };
+
+    const user = await User.findByIdAndUpdate(req.user.id, fieldsToUpdate, {
+      new: true,
+      runValidators: true,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Update password
+// @route   PUT /api/auth/updatepassword
+// @access  Private
+export const updatePassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Ensure user is authenticated
+    if (!req.user || !req.user.id) {
+      return next(
+        new ErrorResponse('User authentication required', 401)
+      );
+    }
+
+    const user = await User.findById(req.user.id).select('+password');
+
+    if (!user) {
+      return next(new ErrorResponse('User not found', 404));
+    }
+
+    // Check current password
+    const isMatch = await user.matchPassword(req.body.currentPassword);
+
+    if (!isMatch) {
+      return next(new ErrorResponse('Password is incorrect', 401));
+    }
+
+    user.password = req.body.newPassword;
+    await user.save();
+
+    sendTokenResponse(user, 200, res);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Forgot password
+// @route   POST /api/auth/forgotpassword
+// @access  Public
+export const forgotPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const user = await User.findOne({ email: req.body.email });
+
+    if (!user) {
+      return next(new ErrorResponse('There is no user with that email', 404));
+    }
+
+    // Get reset token
+    const resetToken = user.getResetPasswordToken();
+
+    await user.save({ validateBeforeSave: false });
+
+    // Create reset url
+    const resetUrl = `${req.protocol}://${req.get(
+      'host'
+    )}/api/auth/resetpassword/${resetToken}`;
+
+    const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a PUT request to: \n\n ${resetUrl}`;
+
+    try {
+      await sendEmail({
+        email: user.email,
+        subject: 'Password reset token',
+        message,
+      });
+
+      res.status(200).json({ success: true, data: 'Email sent' });
+    } catch (err) {
+      console.error(err);
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+
+      await user.save({ validateBeforeSave: false });
+
+      return next(new ErrorResponse('Email could not be sent', 500));
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Reset password
+// @route   PUT /api/auth/resetpassword/:resettoken
+// @access  Public
+export const resetPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Get hashed token
+    const resetPasswordToken = crypto
+      .createHash('sha256')
+      .update(req.params.resettoken)
+      .digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return next(new ErrorResponse('Invalid token', 400));
+    }
+
+    // Set new password
+    user.password = req.body.password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    sendTokenResponse(user, 200, res);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Helper function to get token from model, create cookie and send response
+const sendTokenResponse = (user: IUserDocument, statusCode: number, res: Response) => {
+  // Create token
+  const token = user.getSignedJwtToken();
+
+  const options = {
+    expires: new Date(
+      Date.now() + JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000
+    ),
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production', // use HTTPS in production
+  };
+
+  res
+    .status(statusCode)
+    .cookie('token', token, options)
+    .json({
+      success: true,
+      token,
+      user: {
+        _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        churches: user.churches,
+      },
+    });
+};
+
+// @desc    Get current logged in user
+// @route   GET /api/auth/me
+// @access  Private
+export const getMe = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Ensure user is authenticated
+    if (!req.user || !req.user.id) {
+      return next(
+        new ErrorResponse('User authentication required', 401)
+      );
+    }
+
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return next(new ErrorResponse('User not found', 404));
+    }
+
+    res.status(200).json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    next(error);
   }
 }; 

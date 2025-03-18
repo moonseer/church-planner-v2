@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  client:
+    build:
+      context: .
+      dockerfile: config/docker/client/Dockerfile.prod
+    container_name: church-planner-client
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+    networks:
+      - church-planner-network
+
+  server:
+    build:
+      context: .
+      dockerfile: config/docker/server/Dockerfile.prod
+    container_name: church-planner-server
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - MONGO_URI=mongodb://mongodb:27017/church_planner
+      - JWT_SECRET=${JWT_SECRET}
+      - CLIENT_URL=http://localhost:80
+    depends_on:
+      - mongodb
+    networks:
+      - church-planner-network
+
+  mongodb:
+    image: mongo:6.0
+    container_name: church-planner-mongodb
+    restart: unless-stopped
+    volumes:
+      - mongodb-data:/data/db
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=church_planner
+    networks:
+      - church-planner-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: church-planner-grafana
+    restart: unless-stopped
+    ports:
+      - "3030:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+    depends_on:
+      - prometheus
+    networks:
+      - church-planner-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: church-planner-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./config/docker/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - server
+    networks:
+      - church-planner-network
+
+volumes:
+  mongodb-data:
+  grafana-data:
+  prometheus-data:
+
+networks:
+  church-planner-network:
+    driver: bridge 

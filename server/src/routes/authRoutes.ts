@@ -1,5 +1,14 @@
 import express from 'express';
-import { register, login, getCurrentUser, logout } from '../controllers/authController';
+import {
+  register,
+  login,
+  logout,
+  getMe,
+  updateDetails,
+  updatePassword,
+  forgotPassword,
+  resetPassword
+} from '../controllers/authController';
 import { protect } from '../middleware/auth';
 import rateLimit from 'express-rate-limit';
 
@@ -7,10 +16,10 @@ const router = express.Router();
 
 // Rate limiting for authentication endpoints
 const authLimiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes by default
-  max: parseInt(process.env.RATE_LIMIT_MAX || '100', 10), // Limit each IP to 100 requests per windowMs
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
   message: 'Too many requests from this IP, please try again later',
 });
 
@@ -194,7 +203,7 @@ router.post('/login', authLimiter, login);
  *                       example: Logged out successfully
  */
 
-router.post('/logout', logout);
+router.get('/logout', logout);
 
 /**
  * @swagger
@@ -227,6 +236,11 @@ router.post('/logout', logout);
  */
 
 // Protected routes
-router.get('/me', protect, getCurrentUser);
+router.get('/me', protect, getMe);
+
+router.put('/updatedetails', protect, updateDetails);
+router.put('/updatepassword', protect, updatePassword);
+router.post('/forgotpassword', forgotPassword);
+router.put('/resetpassword/:resettoken', resetPassword);
 
 export default router; 

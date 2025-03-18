@@ -1,0 +1,66 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+client/dist/
+server/dist/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Cache files
+.npm
+.eslintcache
+.stylelintcache
+.parcel-cache
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_esm/
+.rts2_cache_umd/
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor directories and files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Coverage
+coverage/
+.nyc_output/
+
+# TypeScript
+*.tsbuildinfo
+
+# temp files
+.temp
+.tmp
+.cache
+
+# Deployment directories
+.serverless/
+.vercel/
+.netlify/ 

@@ -4,8 +4,22 @@ import {
   createChurch, 
   getChurch, 
   updateChurch, 
-  deleteChurch 
+  deleteChurch,
+  getMyChurches,
+  addMember,
+  removeMember,
+  addAdmin,
+  removeAdmin
 } from '../controllers/churchController';
+import {
+  getChurchMembers,
+  getChurchMember,
+  createChurchMember,
+  updateChurchMember,
+  deleteChurchMember,
+  getMemberStats,
+  searchChurchMembers
+} from '../controllers/churchMemberController';
 import { protect, authorize } from '../middleware/auth';
 import { UserRole } from '@shared/types/auth';
 
@@ -142,7 +156,7 @@ const router = express.Router();
  */
 router.route('/')
   .get(getChurches)
-  .post(protect, authorize([UserRole.ADMIN]), createChurch);
+  .post(protect, authorize(['admin']), createChurch);
 
 /**
  * @swagger
@@ -266,7 +280,30 @@ router.route('/')
  */
 router.route('/:id')
   .get(getChurch)
-  .put(protect, authorize([UserRole.ADMIN]), updateChurch)
-  .delete(protect, authorize([UserRole.ADMIN]), deleteChurch);
+  .put(protect, updateChurch)
+  .delete(protect, deleteChurch);
+
+// Protected routes
+router.get('/my-churches', protect, getMyChurches);
+router.post('/:id/members', protect, addMember);
+router.delete('/:id/members/:memberId', protect, removeMember);
+router.post('/:id/admins', protect, addAdmin);
+router.delete('/:id/admins/:adminId', protect, removeAdmin);
+
+// Church member routes
+router.route('/:churchId/members')
+  .get(protect, getChurchMembers)
+  .post(protect, createChurchMember);
+
+router.route('/:churchId/members/stats')
+  .get(protect, getMemberStats);
+
+router.route('/:churchId/members/search')
+  .get(protect, searchChurchMembers);
+
+router.route('/:churchId/members/:id')
+  .get(protect, getChurchMember)
+  .put(protect, updateChurchMember)
+  .delete(protect, deleteChurchMember);
 
 export default router; 

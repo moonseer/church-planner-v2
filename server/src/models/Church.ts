@@ -1,54 +1,87 @@
-import mongoose from 'mongoose';
-import { IChurchDocument, IChurchModel } from '@shared/types/mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
-const ChurchSchema = new mongoose.Schema<IChurchDocument, IChurchModel>({
-  name: {
-    type: String,
-    required: [true, 'Please add a church name'],
-    unique: true,
-    trim: true,
-    maxlength: [50, 'Name cannot be more than 50 characters'],
-  },
-  address: {
-    type: String,
-    required: false,
-  },
-  city: {
-    type: String,
-    required: false,
-  },
-  state: {
-    type: String,
-    required: false,
-  },
-  zip: {
-    type: String,
-    required: false,
-  },
-  phone: {
-    type: String,
-    required: false,
-  },
-  email: {
-    type: String,
-    required: false,
-    match: [
-      /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-      'Please add a valid email',
+export interface IChurch {
+  name: string;
+  description?: string;
+  location?: {
+    address?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    country?: string;
+  };
+  contact?: {
+    phone?: string;
+    email?: string;
+    website?: string;
+  };
+  denomination?: string;
+  pastorName?: string;
+  serviceTime?: string;
+  foundedYear?: number;
+  members: mongoose.Types.ObjectId[];
+  admins: mongoose.Types.ObjectId[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IChurchDocument extends IChurch, Document {}
+
+const ChurchSchema: Schema = new Schema(
+  {
+    name: {
+      type: String,
+      required: [true, 'Please add a church name'],
+      trim: true,
+      maxlength: [100, 'Name cannot be more than 100 characters'],
+    },
+    description: {
+      type: String,
+      maxlength: [1000, 'Description cannot be more than 1000 characters'],
+    },
+    location: {
+      address: String,
+      city: String,
+      state: String,
+      zipCode: String,
+      country: String,
+    },
+    contact: {
+      phone: String,
+      email: {
+        type: String,
+        match: [
+          /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/,
+          'Please add a valid email',
+        ],
+      },
+      website: String,
+    },
+    denomination: String,
+    pastorName: String,
+    serviceTime: String,
+    foundedYear: Number,
+    members: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    admins: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
     ],
   },
-  website: {
-    type: String,
-    required: false,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-}, {
-  timestamps: true
-});
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
+);
 
-const Church = mongoose.model<IChurchDocument, IChurchModel>('Church', ChurchSchema);
+// Create Church model
+const Church = mongoose.model<IChurchDocument>('Church', ChurchSchema);
 
 export default Church; 

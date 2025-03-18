@@ -24,17 +24,17 @@ export const isBoolean = (value: unknown): value is boolean => {
 };
 
 /**
+ * Type guard to check if a value is a valid ObjectId string
+ */
+export const isObjectIdString = (value: string): boolean => {
+  return mongoose.Types.ObjectId.isValid(value);
+};
+
+/**
  * Type guard to check if a value is a MongoDB ObjectId
  */
 export const isObjectId = (value: unknown): value is mongoose.Types.ObjectId => {
   return value instanceof mongoose.Types.ObjectId;
-};
-
-/**
- * Type guard to check if a value is a valid ObjectId string
- */
-export const isObjectIdString = (value: unknown): value is string => {
-  return isString(value) && mongoose.Types.ObjectId.isValid(value);
 };
 
 /**
@@ -80,7 +80,7 @@ export const toObjectId = (value: string | mongoose.Types.ObjectId | undefined |
 
   if (isObjectId(value)) return value;
 
-  if (isString(value) && mongoose.Types.ObjectId.isValid(value)) {
+  if (isString(value) && isObjectIdString(value)) {
     return new mongoose.Types.ObjectId(value);
   }
 

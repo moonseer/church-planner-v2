@@ -1,0 +1,16 @@
+{
+  "status": "success",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjVmOGQwYzFkOGI5YzJlMWQ4YjljMmUxZCIsImVtYWlsIjoiam9obi5kb2VAZXhhbXBsZS5jb20iLCJyb2xlIjoidXNlciIsImlhdCI6MTYxOTEyMzQ1NiwiZXhwIjoxNjE5MjA5ODU2fQ.7n8UjW4NQfKjhBRdXYh0vNK5TcnR5CcBg4YeP0YiLEQ",
+    "user": {
+      "id": "5f8d0c1d8b9c2e1d8b9c2e1d",
+      "email": "john.doe@example.com",
+      "firstName": "John",
+      "lastName": "Doe",
+      "phoneNumber": "1234567890",
+      "role": "user",
+      "createdAt": "2023-01-15T08:30:00Z",
+      "updatedAt": "2023-04-22T14:45:30Z"
+    }
+  }
+} 

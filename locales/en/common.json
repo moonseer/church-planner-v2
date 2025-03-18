@@ -1,0 +1,102 @@
+{
+  "app": {
+    "name": "Church Planner",
+    "tagline": "Streamline your church management"
+  },
+  "navigation": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "calendar": "Calendar",
+    "teams": "Teams",
+    "services": "Services",
+    "settings": "Settings",
+    "profile": "Profile",
+    "logout": "Logout"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot Password?",
+    "resetPassword": "Reset Password",
+    "loginButton": "Sign In",
+    "registerButton": "Sign Up",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "Don't have an account?"
+  },
+  "dashboard": {
+    "welcome": "Welcome, {{name}}!",
+    "upcomingEvents": "Upcoming Events",
+    "recentActivity": "Recent Activity",
+    "quickActions": "Quick Actions",
+    "statistics": "Statistics"
+  },
+  "calendar": {
+    "addEvent": "Add Event",
+    "editEvent": "Edit Event",
+    "deleteEvent": "Delete Event",
+    "eventName": "Event Name",
+    "eventDate": "Event Date",
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "location": "Location",
+    "description": "Description",
+    "attendees": "Attendees",
+    "repeat": "Repeat"
+  },
+  "teams": {
+    "createTeam": "Create Team",
+    "teamName": "Team Name",
+    "teamDescription": "Team Description",
+    "teamMembers": "Team Members",
+    "addMember": "Add Member",
+    "removeMember": "Remove Member",
+    "teamLead": "Team Lead"
+  },
+  "services": {
+    "createService": "Create Service",
+    "serviceName": "Service Name",
+    "serviceDate": "Service Date",
+    "serviceTime": "Service Time",
+    "serviceType": "Service Type",
+    "assignTeams": "Assign Teams",
+    "addItem": "Add Item",
+    "serviceItems": "Service Items"
+  },
+  "settings": {
+    "general": "General",
+    "notifications": "Notifications",
+    "security": "Security",
+    "appearance": "Appearance",
+    "language": "Language",
+    "timeZone": "Time Zone",
+    "darkMode": "Dark Mode",
+    "saveChanges": "Save Changes"
+  },
+  "errors": {
+    "required": "This field is required",
+    "invalidEmail": "Please enter a valid email",
+    "passwordMismatch": "Passwords do not match",
+    "minLength": "Must be at least {{count}} characters",
+    "serverError": "Server error. Please try again later",
+    "unauthorized": "Unauthorized. Please login again"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "remove": "Remove",
+    "search": "Search",
+    "filter": "Filter",
+    "loading": "Loading...",
+    "success": "Success!",
+    "error": "Error!",
+    "confirmation": "Are you sure?",
+    "yes": "Yes",
+    "no": "No"
+  }
+} 

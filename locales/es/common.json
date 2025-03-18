@@ -1,0 +1,102 @@
+{
+  "app": {
+    "name": "Church Planner",
+    "tagline": "Optimiza la gestión de tu iglesia"
+  },
+  "navigation": {
+    "home": "Inicio",
+    "dashboard": "Tablero",
+    "calendar": "Calendario",
+    "teams": "Equipos",
+    "services": "Servicios",
+    "settings": "Configuración",
+    "profile": "Perfil",
+    "logout": "Cerrar Sesión"
+  },
+  "auth": {
+    "login": "Iniciar Sesión",
+    "register": "Registrarse",
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar Contraseña",
+    "forgotPassword": "¿Olvidaste tu Contraseña?",
+    "resetPassword": "Restablecer Contraseña",
+    "loginButton": "Ingresar",
+    "registerButton": "Registrarse",
+    "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+    "dontHaveAccount": "¿No tienes una cuenta?"
+  },
+  "dashboard": {
+    "welcome": "¡Bienvenido, {{name}}!",
+    "upcomingEvents": "Próximos Eventos",
+    "recentActivity": "Actividad Reciente",
+    "quickActions": "Acciones Rápidas",
+    "statistics": "Estadísticas"
+  },
+  "calendar": {
+    "addEvent": "Añadir Evento",
+    "editEvent": "Editar Evento",
+    "deleteEvent": "Eliminar Evento",
+    "eventName": "Nombre del Evento",
+    "eventDate": "Fecha del Evento",
+    "startTime": "Hora de Inicio",
+    "endTime": "Hora de Finalización",
+    "location": "Ubicación",
+    "description": "Descripción",
+    "attendees": "Asistentes",
+    "repeat": "Repetir"
+  },
+  "teams": {
+    "createTeam": "Crear Equipo",
+    "teamName": "Nombre del Equipo",
+    "teamDescription": "Descripción del Equipo",
+    "teamMembers": "Miembros del Equipo",
+    "addMember": "Añadir Miembro",
+    "removeMember": "Eliminar Miembro",
+    "teamLead": "Líder del Equipo"
+  },
+  "services": {
+    "createService": "Crear Servicio",
+    "serviceName": "Nombre del Servicio",
+    "serviceDate": "Fecha del Servicio",
+    "serviceTime": "Hora del Servicio",
+    "serviceType": "Tipo de Servicio",
+    "assignTeams": "Asignar Equipos",
+    "addItem": "Añadir Elemento",
+    "serviceItems": "Elementos del Servicio"
+  },
+  "settings": {
+    "general": "General",
+    "notifications": "Notificaciones",
+    "security": "Seguridad",
+    "appearance": "Apariencia",
+    "language": "Idioma",
+    "timeZone": "Zona Horaria",
+    "darkMode": "Modo Oscuro",
+    "saveChanges": "Guardar Cambios"
+  },
+  "errors": {
+    "required": "Este campo es obligatorio",
+    "invalidEmail": "Por favor, introduce un correo electrónico válido",
+    "passwordMismatch": "Las contraseñas no coinciden",
+    "minLength": "Debe tener al menos {{count}} caracteres",
+    "serverError": "Error del servidor. Por favor, inténtalo de nuevo más tarde",
+    "unauthorized": "No autorizado. Por favor, inicia sesión de nuevo"
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "add": "Añadir",
+    "remove": "Eliminar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "loading": "Cargando...",
+    "success": "¡Éxito!",
+    "error": "¡Error!",
+    "confirmation": "¿Estás seguro?",
+    "yes": "Sí",
+    "no": "No"
+  }
+} 

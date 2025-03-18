@@ -1,113 +1,99 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-import { UserRole, JwtPayload } from '@shared/types/auth';
-import { IUserDocument, IUserModel } from '@shared/types/mongoose';
 
-// Export IUser as an alias for IUserDocument to maintain compatibility with tests
-export type IUser = IUserDocument;
-
-// Add methods to the user document
-export interface IUserMethods {
-  matchPassword(enteredPassword: string): Promise<boolean>;
-  getSignedJwtToken(): string;
-  isLocked(): boolean;
-  incrementLoginAttempts(): Promise<void>;
+export interface IUser {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  role: 'user' | 'admin';
+  churches: mongoose.Types.ObjectId[];
+  resetPasswordToken?: string;
+  resetPasswordExpire?: Date;
+  lastLogin?: Date;
+  isActive: boolean;
+  loginAttempts: number;
+  lockUntil?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-// Combine document with its methods
-type UserDocument = IUserDocument & IUserMethods;
+export interface IUserDocument extends IUser, Document {
+  matchPassword: (enteredPassword: string) => Promise<boolean>;
+  getSignedJwtToken: () => string;
+  getResetPasswordToken: () => string;
+  incrementLoginAttempts: () => Promise<void>;
+  clearLoginAttempts: () => Promise<void>;
+}
 
-// Password validation function
-const validatePassword = (password: string): boolean => {
-  // At least 8 characters long
-  if (password.length < 8) return false;
-  
-  // Contains at least one uppercase letter
-  if (!/[A-Z]/.test(password)) return false;
-  
-  // Contains at least one lowercase letter
-  if (!/[a-z]/.test(password)) return false;
-  
-  // Contains at least one number
-  if (!/[0-9]/.test(password)) return false;
-  
-  // Contains at least one special character
-  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) return false;
-  
-  return true;
-};
-
-const UserSchema = new mongoose.Schema<UserDocument, IUserModel>({
-  name: {
-    type: String,
-    required: [true, 'Please add a name'],
-    trim: true,
-  },
-  email: {
-    type: String,
-    required: [true, 'Please add an email'],
-    unique: true,
-    lowercase: true,
-    trim: true,
-    match: [
-      /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-      'Please add a valid email',
-    ],
-  },
-  password: {
-    type: String,
-    required: [true, 'Please add a password'],
-    minlength: [8, 'Password must be at least 8 characters long'],
-    validate: {
-      validator: validatePassword,
-      message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+const UserSchema: Schema = new Schema(
+  {
+    firstName: {
+      type: String,
+      required: [true, 'Please add a first name'],
+      trim: true,
+      maxlength: [50, 'First name cannot be more than 50 characters'],
     },
-    select: false,
+    lastName: {
+      type: String,
+      required: [true, 'Please add a last name'],
+      trim: true,
+      maxlength: [50, 'Last name cannot be more than 50 characters'],
+    },
+    email: {
+      type: String,
+      required: [true, 'Please add an email'],
+      unique: true,
+      trim: true,
+      lowercase: true,
+      match: [
+        /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/,
+        'Please add a valid email',
+      ],
+    },
+    password: {
+      type: String,
+      required: [true, 'Please add a password'],
+      minlength: [6, 'Password must be at least 6 characters'],
+      select: false,
+    },
+    role: {
+      type: String,
+      enum: ['user', 'admin'],
+      default: 'user',
+    },
+    churches: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Church',
+      },
+    ],
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
+    lastLogin: Date,
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    loginAttempts: {
+      type: Number,
+      default: 0,
+    },
+    lockUntil: Date,
   },
-  passwordLastChanged: {
-    type: Date,
-    default: Date.now,
-  },
-  role: {
-    type: String,
-    enum: Object.values(UserRole),
-    default: UserRole.USER,
-  },
-  church: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Church',
-    required: false,
-  },
-  loginAttempts: {
-    type: Number,
-    default: 0,
-  },
-  lockUntil: {
-    type: Date,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-}, {
-  timestamps: true
-});
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
+);
 
 // Encrypt password using bcrypt
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
-    next();
-    return;
-  }
-
-  // Update passwordLastChanged timestamp
-  this.passwordLastChanged = new Date();
-  
-  // Reset login attempts on password change
-  if (this.isModified('password')) {
-    this.loginAttempts = 0;
-    this.lockUntil = undefined;
+    return next();
   }
 
   const salt = await bcrypt.genSalt(10);
@@ -117,23 +103,13 @@ UserSchema.pre('save', async function (next) {
 
 // Sign JWT and return
 UserSchema.methods.getSignedJwtToken = function () {
-  // Get JWT secret from environment variables or generate a secure random one
-  const jwtSecret = process.env.JWT_SECRET;
-  
-  if (!jwtSecret) {
-    console.warn('WARNING: JWT_SECRET environment variable not set. Using a less secure fallback.');
-    // In production, this should never happen as the app should fail to start without a JWT_SECRET
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('JWT_SECRET must be set in production environment');
+  return jwt.sign(
+    { id: this._id },
+    process.env.JWT_SECRET || 'secret',
+    {
+      expiresIn: process.env.JWT_EXPIRE || '30d',
     }
-  }
-  
-  const payload = { id: this._id.toString() };
-  
-  // @ts-ignore - Ignoring TypeScript error for JWT sign
-  return jwt.sign(payload, jwtSecret || 'defaultsecret', {
-    expiresIn: process.env.JWT_EXPIRE || '30d',
-  });
+  );
 };
 
 // Match user entered password to hashed password in database
@@ -141,34 +117,61 @@ UserSchema.methods.matchPassword = async function (enteredPassword: string) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Check if account is locked
-UserSchema.methods.isLocked = function () {
-  // Check for a future lockUntil timestamp
-  return this.lockUntil && this.lockUntil > new Date();
+// Generate and hash password token
+UserSchema.methods.getResetPasswordToken = function () {
+  // Generate token
+  const resetToken = crypto.randomBytes(20).toString('hex');
+
+  // Hash token and set to resetPasswordToken field
+  this.resetPasswordToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+
+  // Set expire
+  this.resetPasswordExpire = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+  return resetToken;
 };
 
-// Track failed login attempts and lock account if needed
+// Increment login attempts and lock account if necessary
 UserSchema.methods.incrementLoginAttempts = async function () {
-  // If previous lock has expired, restart at 1
-  if (this.lockUntil && this.lockUntil < new Date()) {
+  // If we have a previous lock that has expired, restart at 1
+  if (
+    this.lockUntil &&
+    this.lockUntil < new Date()
+  ) {
     this.loginAttempts = 1;
     this.lockUntil = undefined;
   } else {
-    // Increment login attempts
+    // Otherwise increment
     this.loginAttempts += 1;
   }
 
-  // Lock the account if we've reached the max attempts
-  const MAX_LOGIN_ATTEMPTS = 5;
-  const LOCK_TIME = 15 * 60 * 1000; // 15 minutes
-
-  if (this.loginAttempts >= MAX_LOGIN_ATTEMPTS && !this.isLocked()) {
-    this.lockUntil = new Date(Date.now() + LOCK_TIME);
+  // Lock the account if we've reached max attempts
+  if (this.loginAttempts >= 5) {
+    // Lock for 1 hour
+    this.lockUntil = new Date(Date.now() + 60 * 60 * 1000);
   }
 
-  return this.save();
+  await this.save();
 };
 
-const User = mongoose.model<UserDocument, IUserModel>('User', UserSchema);
+// Clear login attempts
+UserSchema.methods.clearLoginAttempts = async function () {
+  this.loginAttempts = 0;
+  this.lockUntil = undefined;
+  await this.save();
+};
+
+// Virtual for full name
+UserSchema.virtual('fullName').get(function() {
+  return `${this.firstName} ${this.lastName}`;
+});
+
+// Index for faster queries
+UserSchema.index({ email: 1 });
+
+const User = mongoose.model<IUserDocument>('User', UserSchema);
 
 export default User; 
