@@ -1,14 +1,9 @@
+import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
 import { ApiResponse, ApiError } from '@shared/types/api';
-
-interface RequestOptions {
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
-  headers?: Record<string, string>;
-  body?: unknown;
-  csrfToken?: string;
-}
 
 interface ApiClientConfig {
   baseUrl: string;
+  timeout?: number;
 }
 
 /**
@@ -16,71 +11,82 @@ interface ApiClientConfig {
  */
 export class ApiClient {
   private baseUrl: string;
+  private axios: AxiosInstance;
 
   constructor(config: ApiClientConfig) {
     this.baseUrl = config.baseUrl;
-  }
+    
+    // Create Axios instance with configuration
+    this.axios = axios.create({
+      baseURL: this.baseUrl,
+      timeout: config.timeout || 10000,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      withCredentials: true, // Always include credentials for cookie-based auth
+    });
 
-  /**
-   * Make an API request
-   */
-  public async request<T>(
-    endpoint: string,
-    options: RequestOptions
-  ): Promise<T> {
-    const { method, headers = {}, body, csrfToken } = options;
-    const url = `${this.baseUrl}${endpoint}`;
+    // Request interceptor for adding auth token
+    this.axios.interceptors.request.use(
+      (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
 
-    // Set up headers with content type and CSRF token if provided
-    const requestHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...headers,
-    };
-
-    // Add CSRF token if provided
-    if (csrfToken) {
-      requestHeaders['CSRF-Token'] = csrfToken;
-    }
-
-    try {
-      const response = await fetch(url, {
-        method,
-        headers: requestHeaders,
-        body: body ? JSON.stringify(body) : undefined,
-        credentials: 'include', // Always include credentials for cookie-based auth
-      });
-
-      // Check if response is ok (status 200-299)
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || errorData.error || 'An error occurred'
-        );
+    // Response interceptor for handling common errors
+    this.axios.interceptors.response.use(
+      (response) => response,
+      (error: AxiosError) => {
+        // Handle auth errors (redirect to login)
+        if (error.response?.status === 401) {
+          localStorage.removeItem('token');
+          // If not already on login page, redirect
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
+        }
+        
+        // Handle API-specific errors
+        if (error.response?.data) {
+          return Promise.reject(
+            new Error(
+              (error.response.data as any).message || 
+              (error.response.data as any).error || 
+              'An error occurred'
+            )
+          );
+        }
+        
+        // Handle network errors
+        if (error.message === 'Network Error') {
+          return Promise.reject(new Error('Unable to connect to the server. Please check your internet connection.'));
+        }
+        
+        // Handle timeout errors
+        if (error.code === 'ECONNABORTED') {
+          return Promise.reject(new Error('The request timed out. Please try again.'));
+        }
+        
+        return Promise.reject(error);
       }
-
-      // Check if response is JSON
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const data = await response.json();
-        return data as T;
-      }
-
-      // For non-JSON responses
-      const text = await response.text();
-      return { message: text } as unknown as T;
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error('An unexpected error occurred');
-    }
+    );
   }
 
   /**
    * Make a GET request
    */
-  public async get<T>(endpoint: string, csrfToken?: string): Promise<T> {
-    return this.request<T>(endpoint, { method: 'GET', csrfToken });
+  public async get<T>(endpoint: string, params?: Record<string, any>): Promise<T> {
+    try {
+      const response: AxiosResponse<T> = await this.axios.get(endpoint, { params });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 
   /**
@@ -89,13 +95,14 @@ export class ApiClient {
   public async post<T>(
     endpoint: string,
     data?: unknown,
-    csrfToken?: string
+    config?: { headers?: Record<string, string> }
   ): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: 'POST',
-      body: data,
-      csrfToken,
-    });
+    try {
+      const response: AxiosResponse<T> = await this.axios.post(endpoint, data, config);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 
   /**
@@ -104,24 +111,34 @@ export class ApiClient {
   public async put<T>(
     endpoint: string,
     data?: unknown,
-    csrfToken?: string
+    config?: { headers?: Record<string, string> }
   ): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: 'PUT',
-      body: data,
-      csrfToken,
-    });
+    try {
+      const response: AxiosResponse<T> = await this.axios.put(endpoint, data, config);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 
   /**
    * Make a DELETE request
    */
-  public async delete<T>(endpoint: string, csrfToken?: string): Promise<T> {
-    return this.request<T>(endpoint, { method: 'DELETE', csrfToken });
+  public async delete<T>(
+    endpoint: string,
+    config?: { headers?: Record<string, string> }
+  ): Promise<T> {
+    try {
+      const response: AxiosResponse<T> = await this.axios.delete(endpoint, config);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 }
 
 // Create default API client instance
 export const apiClient = new ApiClient({
-  baseUrl: import.meta.env.VITE_API_URL || '/api',
+  baseUrl: import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1',
+  timeout: 10000,
 }); 

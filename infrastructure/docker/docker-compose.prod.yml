@@ -1,0 +1,218 @@
+version: '3.8'
+
+# Production environment configuration
+# This extends the base docker-compose.yml
+
+services:
+  # API Gateway
+  api-gateway:
+    build:
+      context: ../../services/api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - NODE_ENV=production
+      - PORT=8000
+      - SERVICE_NAME=api-gateway
+      - API_PREFIX=/api/v1
+      # Service URLs
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - CHURCH_SERVICE_URL=http://church-service:3002
+      - MEMBER_SERVICE_URL=http://member-service:3003
+      - EVENT_SERVICE_URL=http://events-service:3004
+      # JWT configuration
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - JWT_AUDIENCE=${JWT_AUDIENCE}
+      - JWT_ISSUER=${JWT_ISSUER}
+      # Redis configuration
+      - REDIS_URL=redis://redis:6379
+      - REDIS_CACHE_TTL=${REDIS_CACHE_TTL}
+      # CORS configuration
+      - CORS_ORIGIN=${CORS_ORIGIN}
+      # Rate limiting
+      - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS}
+      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX}
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL}
+      # Timeouts
+      - PROXY_TIMEOUT=${PROXY_TIMEOUT}
+      - SOCKET_TIMEOUT=${SOCKET_TIMEOUT}
+    networks:
+      - church-planner-network
+    depends_on:
+      - redis
+      - auth-service
+      - church-service
+      - member-service
+      - events-service
+    restart: always
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ../../services/auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - MONGO_URI=mongodb://auth-db:27017/auth
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRE=30d
+    networks:
+      - church-planner-network
+    depends_on:
+      - auth-db
+    restart: always
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Church Service
+  church-service:
+    build:
+      context: ../../services/church-service
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+      - MONGO_URI=mongodb://church-db:27017/church
+    networks:
+      - church-planner-network
+    depends_on:
+      - church-db
+    restart: always
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Member Service
+  member-service:
+    build:
+      context: ../../services/member-service
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=production
+      - PORT=3003
+      - MONGO_URI=mongodb://member-db:27017/member
+    networks:
+      - church-planner-network
+    depends_on:
+      - member-db
+    restart: always
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Events Service
+  events-service:
+    build:
+      context: ../../services/events-service
+      dockerfile: Dockerfile
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=production
+      - PORT=3004
+      - MONGO_URI=mongodb://events-db:27017/events
+    networks:
+      - church-planner-network
+    depends_on:
+      - events-db
+    restart: always
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Database services
+  auth-db:
+    image: mongo:latest
+    volumes:
+      - auth-db-data:/data/db
+    networks:
+      - church-planner-network
+    restart: always
+    # No port exposure in production for security
+
+  church-db:
+    image: mongo:latest
+    volumes:
+      - church-db-data:/data/db
+    networks:
+      - church-planner-network
+    restart: always
+    # No port exposure in production for security
+
+  member-db:
+    image: mongo:latest
+    volumes:
+      - member-db-data:/data/db
+    networks:
+      - church-planner-network
+    restart: always
+    # No port exposure in production for security
+
+  events-db:
+    image: mongo:latest
+    volumes:
+      - events-db-data:/data/db
+    networks:
+      - church-planner-network
+    restart: always
+    # No port exposure in production for security
+
+  # Redis for caching
+  redis:
+    image: redis:alpine
+    volumes:
+      - redis-data:/data
+    networks:
+      - church-planner-network
+    restart: always
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    # No port exposure in production for security
+
+  # RabbitMQ for message queue
+  rabbitmq:
+    image: rabbitmq:3-management
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - church-planner-network
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+    # No port exposure in production for security
+
+networks:
+  church-planner-network:
+    external: true
+
+volumes:
+  auth-db-data:
+  church-db-data:
+  member-db-data:
+  events-db-data:
+  redis-data:
+  rabbitmq-data: 

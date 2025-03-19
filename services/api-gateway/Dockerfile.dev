@@ -1,0 +1,25 @@
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies including development dependencies
+RUN npm install
+
+# Copy health check script
+COPY healthcheck.js ./
+
+# Expose the service port
+EXPOSE 3000
+
+# Set health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 CMD ["node", "healthcheck.js"]
+
+# Set node environment
+ENV NODE_ENV=development
+
+# Run the service in development mode with hot reloading
+CMD ["npm", "run", "dev"] 

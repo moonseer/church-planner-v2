@@ -1,38 +1,58 @@
 /**
- * Shared types for API responses
+ * Shared API types for Church Planner Microservices
  */
 
-// Base interface for all API responses
-export interface ApiResponse {
+// Standard API Response
+export interface ApiResponse<T = any> {
   success: boolean;
+  data?: T;
   error?: string | string[];
+  count?: number;
+  pagination?: Pagination;
 }
 
-// Generic success response with data
-export interface ApiSuccessResponse<T> extends ApiResponse {
+// Pagination
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+// Query parameters
+export interface QueryParams {
+  select?: string;
+  sort?: string;
+  page?: number;
+  limit?: number;
+  [key: string]: any;
+}
+
+// Generic CRUD operations
+export interface CrudOperations<T> {
+  getAll(query?: QueryParams): Promise<ApiResponse<T[]>>;
+  getById(id: string): Promise<ApiResponse<T>>;
+  create(data: Partial<T>): Promise<ApiResponse<T>>;
+  update(id: string, data: Partial<T>): Promise<ApiResponse<T>>;
+  delete(id: string): Promise<ApiResponse<void>>;
+}
+
+// Success response with data
+export interface ApiSuccessResponse<T> extends ApiResponse<T> {
   success: true;
   data: T;
-  count?: number; // For paginated responses or collections
 }
 
 // Error response
 export interface ApiErrorResponse extends ApiResponse {
   success: false;
   error: string | string[];
-  statusCode?: number;
-}
-
-// Pagination metadata
-export interface PaginationMeta {
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
 }
 
 // Paginated response
 export interface PaginatedResponse<T> extends ApiSuccessResponse<T[]> {
-  pagination: PaginationMeta;
+  count: number;
+  pagination: Pagination;
 }
 
 // Common HTTP status codes

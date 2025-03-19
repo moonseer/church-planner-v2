@@ -1,152 +1,113 @@
 /**
- * Shared types for data models across client and server
+ * Shared model types for Church Planner Microservices
  */
 
-// Base model types
-/**
- * Core identifier interface
- */
-export interface IIdentifier {
-  id: string;
+import { UserRole } from './auth';
+
+// Base model for all entities
+export interface BaseModel {
+  _id: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-/**
- * Timestamp tracking interface
- */
-export interface ITimestamps {
-  createdAt: string;
-  updatedAt: string;
-}
-
-/**
- * Basic entity with name interface
- */
-export interface INamedEntity extends IIdentifier, ITimestamps {
+// User model
+export interface User extends BaseModel {
   name: string;
-}
-
-/**
- * Interface for entities with description
- */
-export interface IDescribable {
-  description?: string;
-}
-
-/**
- * Contact information interface
- */
-export interface IContactable {
-  email?: string;
-  phone?: string;
-}
-
-/**
- * Web presence interface
- */
-export interface IWebPresence {
-  website?: string;
-}
-
-/**
- * Full address interface
- */
-export interface IAddressable {
-  address?: string;
-  city?: string;
-  state?: string;
-  zip?: string;
-}
-
-/**
- * Church owned entity interface
- */
-export interface IChurchOwned {
-  church: string;
+  email: string;
+  role: UserRole;
+  resetPasswordToken?: string;
+  resetPasswordExpire?: Date;
 }
 
 // Church model
-export interface IChurch extends INamedEntity, IAddressable, IContactable, IWebPresence {
-  // All properties are inherited from the extended interfaces
+export interface Church extends BaseModel {
+  name: string;
+  description: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  logo?: string;
+  owner: string; // Reference to User _id
+  admins: string[]; // Reference to User _ids
 }
 
-// Event Type model
-export interface IEventType extends INamedEntity, IDescribable, IChurchOwned {
-  color: string;
-}
-
-/**
- * Schedulable entity interface
- */
-export interface ISchedulable {
-  start: string; // ISO date string
-  end: string; // ISO date string
-  allDay: boolean;
-  location?: string;
+// Church Member model
+export interface ChurchMember extends BaseModel {
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  dateOfBirth?: Date;
+  joinDate: Date;
+  membershipStatus: MembershipStatus;
+  baptismDate?: Date;
+  gender?: string;
+  familyMembers?: FamilyMember[];
+  notes?: string;
+  church: string; // Reference to Church _id
+  isActive: boolean;
+  attendanceRecord?: AttendanceRecord[];
+  ministries?: string[]; // Reference to Ministry _ids
+  profession?: string;
 }
 
 // Event model
-export interface IEvent extends IIdentifier, ITimestamps, IDescribable, ISchedulable, IChurchOwned {
+export interface Event extends BaseModel {
   title: string;
-  eventType: string | IEventType;
+  description: string;
+  startDate: Date;
+  endDate: Date;
+  location: string;
+  type: EventType;
+  recurrence?: RecurrencePattern;
+  attendees?: string[]; // Reference to ChurchMember _ids
+  church: string; // Reference to Church _id
+  organizer: string; // Reference to User _id
 }
 
-// Team model
-export interface ITeam extends INamedEntity, IDescribable, IChurchOwned {
-  leader: string; // User ID
+// Enums
+export enum MembershipStatus {
+  VISITOR = 'visitor',
+  REGULAR = 'regular',
+  MEMBER = 'member',
+  INACTIVE = 'inactive'
 }
 
-/**
- * Team member status enum
- */
-export enum TeamMemberStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
-  PENDING = 'pending'
+export enum EventType {
+  SERVICE = 'service',
+  MEETING = 'meeting',
+  OUTREACH = 'outreach',
+  SOCIAL = 'social',
+  OTHER = 'other'
 }
 
-/**
- * Team membership information
- */
-export interface ITeamMembership {
-  team: string | ITeam;
-  user: string; // User ID
-  role?: string;
-  status: TeamMemberStatus;
-  joinedAt: string;
+export enum RecurrencePattern {
+  NONE = 'none',
+  DAILY = 'daily',
+  WEEKLY = 'weekly',
+  BIWEEKLY = 'biweekly',
+  MONTHLY = 'monthly',
+  YEARLY = 'yearly'
 }
 
-// Team member model
-export interface ITeamMember extends IIdentifier, ITimestamps, ITeamMembership {
-  // All properties are inherited from the extended interfaces
+// Additional types
+export interface FamilyMember {
+  name: string;
+  relationship: string;
+  dateOfBirth?: Date;
+  isChurchMember?: boolean;
+  churchMemberId?: string; // Reference to ChurchMember _id if isChurchMember is true
 }
 
-/**
- * Service item details
- */
-export interface IServiceItemDetails {
-  order: number;
-  title: string;
-  type: string;
-  duration: number; // Duration in minutes
+export interface AttendanceRecord {
+  date: Date;
+  eventId?: string; // Reference to Event _id
+  present: boolean;
   notes?: string;
-}
-
-/**
- * Team assignment interface
- */
-export interface ITeamAssignable {
-  assignedTeamMembers?: string[]; // Team member IDs
-}
-
-// Service item model
-export interface IServiceItem extends IIdentifier, IServiceItemDetails, ITeamAssignable {
-  // All properties are inherited from the extended interfaces
-}
-
-// Service model
-export interface IService extends IIdentifier, ITimestamps, IDescribable, IChurchOwned {
-  title: string;
-  date: string; // ISO date string
-  event?: string | IEvent;
-  items: IServiceItem[];
 } 

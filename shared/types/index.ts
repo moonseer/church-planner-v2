@@ -1,14 +1,10 @@
 /**
- * Exports all shared types
+ * Index file for shared types
+ * Exports all types from individual files
  */
 
-// Auth types
-export * from './auth';
-
-// API response types
 export * from './api';
-
-// Model types
+export * from './auth';
 export * from './models';
 
 // Mongoose types

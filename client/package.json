@@ -24,7 +24,10 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.3.0",
-    "react-toastify": "^11.0.5"
+    "react-toastify": "^11.0.5",
+    "jwt-decode": "^4.0.0",
+    "dayjs": "^2.0.0",
+    "query-string": "^9.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",

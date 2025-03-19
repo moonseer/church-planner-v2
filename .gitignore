@@ -64,3 +64,4 @@ coverage/
 .serverless/
 .vercel/
 .netlify/ 
+node_modules

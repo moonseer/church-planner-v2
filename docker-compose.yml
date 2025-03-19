@@ -1,17 +1,36 @@
+version: '3.8'
+
+# Root docker-compose file for Church Planner Microservices
+# This file includes configuration for all components
+
+# To run in development mode:
+# docker-compose -f docker-compose.yml -f infrastructure/docker/docker-compose.dev.yml up
+
+# To run in production mode:
+# docker-compose -f docker-compose.yml -f infrastructure/docker/docker-compose.prod.yml up
+
+# Import base configuration
+include:
+  - infrastructure/docker/docker-compose.yml
+
+# Define frontend service here since it's not part of the backend services
 services:
-  # Client Service
   client:
     build:
       context: ./client
-      dockerfile: Dockerfile
-    container_name: church-planner-client
-    restart: always
+      dockerfile: Dockerfile.dev
     ports:
-      - "80:80"
-    depends_on:
-      - server
+      - "3000:3000"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_API_URL=http://localhost:8000
     networks:
       - church-planner-network
+    depends_on:
+      - api-gateway
 
   # Server Service
   server:

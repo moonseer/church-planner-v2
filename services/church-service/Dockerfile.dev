@@ -1,0 +1,20 @@
+FROM node:18-alpine
+
+# Create app directory
+WORKDIR /app
+
+# Install dependencies
+COPY package*.json ./
+RUN npm install
+
+# Create logs directory
+RUN mkdir -p logs
+
+# Bundle app source (handled by volume mount in docker-compose)
+# COPY . .
+
+# Expose port
+EXPOSE 3002
+
+# Run the app with nodemon for hot reloading
+CMD ["npm", "run", "dev"] 

@@ -1,0 +1,27 @@
+version: '3.8'
+
+networks:
+  church-planner-network:
+    driver: bridge
+
+volumes:
+  # Database volumes
+  auth-db-data:
+  church-db-data:
+  member-db-data:
+  events-db-data:
+  
+  # Cache volume
+  redis-data:
+  
+  # Monitoring and logging volumes
+  elasticsearch-data:
+  prometheus-data:
+  grafana-data:
+  
+  # Message queue volume
+  rabbitmq-data:
+
+services:
+  # This base file defines only common elements
+  # Actual service configurations will be in environment-specific files 
