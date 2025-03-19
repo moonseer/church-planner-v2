@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User, { IUser } from '../models/User';
+import mongoose from 'mongoose';
 
 // Types for auth service
 export interface RegisterUserInput {
@@ -119,9 +120,12 @@ class AuthService {
     const secret = process.env.JWT_SECRET || 'your-secret-key';
     const expiresIn = process.env.JWT_EXPIRES_IN || '1d';
 
+    // Type assertion to handle _id type
+    const id = (user._id as mongoose.Types.ObjectId).toString();
+
     return jwt.sign(
       {
-        id: user._id.toString(),
+        id,
         email: user.email,
         role: user.role,
       },
@@ -155,7 +159,7 @@ class AuthService {
 
       return {
         user: {
-          id: user._id.toString(),
+          id: (user._id as mongoose.Types.ObjectId).toString(),
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
