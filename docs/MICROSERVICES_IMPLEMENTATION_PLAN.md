@@ -343,52 +343,52 @@ export class ApiClient {
 
 ### 3.2 Church Service Implementation (Week 3, Day 4-7)
 
-- [ ] Extract church management logic from monolith
-- [ ] Implement church CRUD operations
-- [ ] Set up team management functionality
-- [ ] Configure church database
+- [x] Extract church management logic from monolith
+- [x] Implement church CRUD operations
+- [x] Set up team management functionality
+- [x] Configure church database
 
 **Church Service Endpoints:**
-- [ ] GET /churches
-- [ ] POST /churches
-- [ ] GET /churches/:id
-- [ ] PUT /churches/:id
-- [ ] DELETE /churches/:id
-- [ ] GET /churches/my-churches
-- [ ] POST /churches/:id/admins
-- [ ] DELETE /churches/:id/admins/:adminId
+- [x] GET /churches
+- [x] POST /churches
+- [x] GET /churches/:id
+- [x] PUT /churches/:id
+- [x] DELETE /churches/:id
+- [x] GET /churches/my-churches
+- [x] POST /churches/:id/admins
+- [x] DELETE /churches/:id/admins/:adminId
 
 ### 3.3 Member Service Implementation (Week 4, Day 1-3)
 
-- [ ] Extract member management logic from monolith
-- [ ] Implement church member CRUD operations
-- [ ] Set up statistics and searching functionality
-- [ ] Configure member database
+- [x] Extract member management logic from monolith
+- [x] Implement church member CRUD operations
+- [x] Set up statistics and searching functionality
+- [x] Configure member database
 
 **Member Service Endpoints:**
-- [ ] GET /churches/:churchId/members
-- [ ] POST /churches/:churchId/members
-- [ ] GET /churches/:churchId/members/:id
-- [ ] PUT /churches/:churchId/members/:id
-- [ ] DELETE /churches/:churchId/members/:id
-- [ ] GET /churches/:churchId/members/stats
-- [ ] GET /churches/:churchId/members/search
+- [x] GET /churches/:churchId/members
+- [x] POST /churches/:churchId/members
+- [x] GET /churches/:churchId/members/:id
+- [x] PUT /churches/:churchId/members/:id
+- [x] DELETE /churches/:churchId/members/:id
+- [x] GET /churches/:churchId/members/stats
+- [x] GET /churches/:churchId/members/search
 
 ### 3.4 Events Service Implementation (Week 4, Day 4-7)
 
-- [ ] Extract events management logic from monolith
-- [ ] Implement event CRUD operations
-- [ ] Set up event types and service scheduling
-- [ ] Configure events database
+- [x] Extract events management logic from monolith
+- [x] Implement event CRUD operations
+- [x] Set up event types and service scheduling
+- [x] Configure events database
 
 **Events Service Endpoints:**
-- [ ] GET /churches/:churchId/events
-- [ ] POST /churches/:churchId/events
-- [ ] GET /churches/:churchId/events/:id
-- [ ] PUT /churches/:churchId/events/:id
-- [ ] DELETE /churches/:churchId/events/:id
-- [ ] GET /churches/:churchId/services
-- [ ] POST /churches/:churchId/services
+- [x] GET /churches/:churchId/events
+- [x] POST /churches/:churchId/events
+- [x] GET /churches/:churchId/events/:id
+- [x] PUT /churches/:churchId/events/:id
+- [x] DELETE /churches/:churchId/events/:id
+- [x] GET /churches/:churchId/services
+- [x] POST /churches/:churchId/services
 
 ### 3.5 Message Queue Integration (Week 5, Day 1-2)
 
@@ -417,6 +417,38 @@ export class ApiClient {
 - [ ] Cache church lists and details
 - [ ] Cache frequently accessed member lists
 - [ ] Implement cache clearing on updates
+
+### 3.7 Notification Service Implementation
+
+- [x] Set up notification service architecture
+- [x] Implement notification models (notifications, templates, preferences)
+- [x] Create notification controllers and routes
+- [x] Implement email service integration
+- [x] Configure template rendering
+- [x] Set up notification preferences management
+- [x] Implement device token management for push notifications
+- [x] Create notification delivery mechanisms
+- [x] Implement notification digest functionality
+
+**Notification Service Endpoints:**
+- [x] GET /notifications/user/:userId - Get user notifications
+- [x] POST /notifications/user/:userId/read-all - Mark all notifications as read
+- [x] GET /notifications/:id - Get notification by ID
+- [x] PUT /notifications/:id - Update notification
+- [x] DELETE /notifications/:id - Delete notification
+- [x] POST /notifications/:id/read - Mark notification as read
+- [x] POST /notifications - Create notification
+- [x] GET /templates - Get notification templates
+- [x] POST /templates - Create notification template
+- [x] GET /templates/:id - Get template by ID
+- [x] PUT /templates/:id - Update template
+- [x] DELETE /templates/:id - Delete template
+- [x] POST /templates/:id/render - Render template with data
+- [x] GET /preferences/user/:userId - Get user preferences
+- [x] PUT /preferences/user/:userId - Update user preferences
+- [x] PUT /preferences/user/:userId/category/:category - Update category preferences
+- [x] POST /preferences/user/:userId/device - Add device token
+- [x] DELETE /preferences/user/:userId/device/:deviceId - Remove device token
 
 ## Phase 4: Monitoring and Observability
 
@@ -649,6 +681,12 @@ docs/
 | Task 5.1 | Implement Church Service - Base | ✅ | March 29, 2025 |
 | Task 5.2 | Implement Church Service - Advanced Features | ⬜ | - |
 | Task 6.1-6.4 | Events Service and Monitoring | ⬜ | - |
+| Task 7.1 | Implement Notification Service | ✅ | June 20, 2025 |
+| Task 7.2 | Set Up Email Templates | ✅ | June 22, 2025 |
+| Task 7.3 | Implement Push Notifications | ✅ | June 25, 2025 |
+| Task 8.1 | Implement Client Application - Base UI | ⬜ | - |
+| Task 8.2 | Add Authentication Flows | ⬜ | - |
+| Task 8.3 | Implement Service-Specific Screens | ⬜ | - |
 
 ## Current Status and Next Steps
 
@@ -671,14 +709,14 @@ docs/
 | 6.2: Create Event Management Endpoints          | ✅     | June 5, 2025       |
 | 6.3: Implement Calendar Integration             | ✅     | June 15, 2025   |
 | 6.4: Add Recurring Events Support               | ✅     | June 10, 2025     |
-| 7.1: Implement Notification Service             | ⬜     |                 |
-| 7.2: Set Up Email Templates                     | ⬜     |                 |
-| 7.3: Implement Push Notifications               | ⬜     |                 |
+| 7.1: Implement Notification Service             | ✅     | June 20, 2025    |
+| 7.2: Set Up Email Templates                     | ✅     | June 22, 2025    |
+| 7.3: Implement Push Notifications               | ✅     | June 25, 2025    |
 | 8.1: Implement Client Application - Base UI     | ⬜     |                 |
 | 8.2: Add Authentication Flows                   | ⬜     |                 |
 | 8.3: Implement Service-Specific Screens         | ⬜     |                 |
 
-### Current Progress Summary (June 15, 2025)
+### Current Progress Summary (June 25, 2025)
 
 We have made significant progress in our microservices implementation for the Church Planner application. All core microservices have been implemented with their essential features:
 
@@ -700,23 +738,32 @@ We have made significant progress in our microservices implementation for the Ch
    - Export capabilities for various formats (ical, json, csv)
    - Webhook endpoints for external calendar service synchronization
 
+7. **Notification Service (Phase 7)**: Complete - We have successfully implemented the Notification Service with:
+   - Multiple notification channels (email, SMS, push, in-app)
+   - Customizable notification templates with variable substitution
+   - User preference management for notification settings
+   - Support for notification digests (daily, weekly, monthly)
+   - Device token management for push notifications
+   - Email service integration with HTML and text templates
+   - Notification status tracking (sent, delivered, read)
+
 ### Immediate Next Steps
 
-1. **Begin Notification Service Implementation**:
-   - Set up the basic service structure
-   - Implement email notification templates for various event types
-   - Create notification preferences for users
-   - Integrate with the Events Service for event reminders
-
-2. **Start Client Application Development**:
+1. **Start Client Application Development**:
    - Create the base UI structure
    - Implement authentication flows
    - Begin development of the dashboard and calendar views
+   - Add notification center UI components
 
-3. **Implement Comprehensive Integration Testing**:
+2. **Implement Comprehensive Integration Testing**:
    - Create end-to-end tests for typical user workflows
    - Test all service interactions
    - Validate webhook endpoints and calendar integration
+
+3. **Set Up Monitoring and Observability**:
+   - Implement the ELK stack for centralized logging
+   - Configure Prometheus and Grafana for metrics collection and visualization
+   - Set up distributed tracing with Jaeger
 
 ### Key Challenges and Mitigations
 
@@ -735,5 +782,9 @@ We have made significant progress in our microservices implementation for the Ch
 4. **Calendar Integration Complexity**:
    - Challenge: Supporting various calendar formats and external providers
    - Mitigation: We've implemented a flexible calendar controller with standardized output formats
-   
+
+5. **Notification Delivery Reliability**:
+   - Challenge: Ensuring notifications are reliably delivered across multiple channels
+   - Mitigation: Implemented retry mechanisms and delivery status tracking
+
 // ... existing code (if any) ... 
